@@ -43,7 +43,7 @@ class JSoupScheduleRepository : ScheduleRepository {
                         val cell = column.child(j)
                         if (cell.child(0).text().isBlank())
                             continue
-                        val name = cell.child(0).text()
+                        val name = cell.child(0).ownText()
                         val type = cell.child(0).child(0).text()
                         val params = cell.getElementsByClass("mb-2")
                         val teachers = ArrayList<String>()
