@@ -15,7 +15,7 @@ data class Schedule(
 data class Class(
     val type: String,
     val name: String,
-    val teacher: String,
+    val teachers: List<String>,
     val classroom: String,
     val week: Int,
     val dayOfWeek: DayOfWeek,
