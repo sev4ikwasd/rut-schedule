@@ -1,4 +1,4 @@
-package com.sev4ikwasd.rutschedule
+package com.sev4ikwasd.rutschedule.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -10,34 +10,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.sev4ikwasd.rutschedule.RUTScheduleApplication
 import com.sev4ikwasd.rutschedule.ui.theme.RUTScheduleTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val appContainer = (application as RUTScheduleApplication).container
         setContent {
-            RUTScheduleTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Greeting("Android")
-                }
-            }
+            RUTScheduleApp(appContainer)
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    RUTScheduleTheme {
-        Greeting("Android")
     }
 }

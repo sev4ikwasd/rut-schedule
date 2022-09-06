@@ -7,10 +7,19 @@ import java.time.LocalTime
 data class Schedule(
     val group: String,
     val classes: List<Class>,
-    val classNumberToTimePeriod: Map<Int, TimePeriod>,
     val dateFrom: LocalDate,
     val dateTo: LocalDate
-)
+) {
+    fun isEmpty(): Boolean {
+        return (group == "") && (classes.isEmpty())
+    }
+
+    companion object {
+        fun empty(): Schedule {
+            return Schedule("", emptyList(), LocalDate.now(), LocalDate.now())
+        }
+    }
+}
 
 data class Class(
     val type: String,
@@ -19,10 +28,7 @@ data class Class(
     val classroom: String,
     val week: Int,
     val dayOfWeek: DayOfWeek,
-    val classNumber: Int
-)
-
-data class TimePeriod(
+    val classNumber: Int,
     val timeFrom: LocalTime,
     val timeTo: LocalTime
 )
