@@ -5,6 +5,7 @@ import android.widget.DatePicker
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -14,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.sev4ikwasd.rutschedule.model.Class
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -25,7 +28,9 @@ import java.time.temporal.ChronoUnit
 @Composable
 fun ScheduleScreen(scheduleViewModel: ScheduleViewModel) {
     when (val state = scheduleViewModel.uiState.collectAsState().value) {
-        is ScheduleUiState.Loading -> Box(modifier = Modifier)
+        is ScheduleUiState.Loading -> Box(Modifier.fillMaxSize()) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        }
         is ScheduleUiState.Loaded ->
             Scaffold(
                 topBar = {
@@ -40,6 +45,8 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel) {
                     currentDate
                 ) % 2) + 1).toInt()
                 DayClasses(
+                    isRefreshing = state.isRefreshing,
+                    onRefresh = { scheduleViewModel.updateSchedule() },
                     classes = state.schedule.classes,
                     dayOfWeek = state.currentDate.dayOfWeek,
                     week = week,
@@ -72,19 +79,26 @@ fun ScheduleTopAppBar(date: LocalDate, onCurrentDateChange: (LocalDate) -> Unit)
 
 @Composable
 fun DayClasses(
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
     classes: List<Class>,
     dayOfWeek: DayOfWeek,
     week: Int,
     date: LocalDate,
     onCurrentDateChange: (LocalDate) -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
+    SwipeRefresh(
+        state = rememberSwipeRefreshState(isRefreshing = isRefreshing),
+        onRefresh = onRefresh
     ) {
-        items(classes) {
-            if ((it.dayOfWeek == dayOfWeek) && (it.week == week))
-                ClassCard(it)
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            items(classes) {
+                if ((it.dayOfWeek == dayOfWeek) && (it.week == week))
+                    ClassCard(it)
+            }
         }
     }
 }
@@ -155,8 +169,8 @@ fun ClassCard(classData: Class) {
 @Preview
 @Composable
 fun PreviewDayClasses() {
-    DayClasses(
-        classes = listOf(
+    DayClasses(false, {},
+        listOf(
             Class(
                 "Лекция",
                 "Математика",
@@ -190,8 +204,8 @@ fun PreviewDayClasses() {
                 LocalTime.of(12, 0),
                 LocalTime.of(13, 30)
             )
-        ), DayOfWeek.MONDAY, 1, LocalDate.now()
-    ) {}
+        ), DayOfWeek.MONDAY, 1, LocalDate.now(), {}
+    )
 }
 
 @Preview

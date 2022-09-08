@@ -14,7 +14,7 @@ import java.time.LocalDate
 
 sealed class ScheduleUiState {
     object Loading : ScheduleUiState()
-    data class Loaded(val schedule: Schedule, val currentDate: LocalDate) : ScheduleUiState()
+    data class Loaded(val isRefreshing: Boolean, val schedule: Schedule, val currentDate: LocalDate) : ScheduleUiState()
     object Error : ScheduleUiState()
 }
 
@@ -25,13 +25,21 @@ class ScheduleViewModel(
     val uiState: StateFlow<ScheduleUiState> = _uiState
 
     init {
+        updateSchedule()
+    }
+
+    fun updateSchedule() {
         viewModelScope.launch {
+            if (_uiState.value is ScheduleUiState.Loaded) {
+                _uiState.update { (it as ScheduleUiState.Loaded).copy(isRefreshing = true) }
+            }
             when (val result = scheduleRepository.getSchedule(194657)) {
                 is Result.Success -> _uiState.value =
-                    ScheduleUiState.Loaded(schedule = result.data, LocalDate.now())
+                    ScheduleUiState.Loaded(false, result.data, LocalDate.now())
                 is Result.Error -> _uiState.value = ScheduleUiState.Error
             }
         }
+
     }
 
     fun updateCurrentDate(date: LocalDate) {
