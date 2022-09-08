@@ -2,6 +2,7 @@ package com.sev4ikwasd.rutschedule.ui.schedule
 
 import android.app.DatePickerDialog
 import android.widget.DatePicker
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,6 +16,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.accompanist.pager.ExperimentalPagerApi
+import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.rememberPagerState
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.sev4ikwasd.rutschedule.model.Class
@@ -28,8 +32,15 @@ import java.time.temporal.ChronoUnit
 @Composable
 fun ScheduleScreen(scheduleViewModel: ScheduleViewModel) {
     when (val state = scheduleViewModel.uiState.collectAsState().value) {
-        is ScheduleUiState.Loading -> Box(Modifier.fillMaxSize()) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        is ScheduleUiState.Loading -> Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center),
+                color = MaterialTheme.colorScheme.primary
+            )
         }
         is ScheduleUiState.Loaded ->
             Scaffold(
@@ -44,7 +55,7 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel) {
                     dateFromWeekBeginning,
                     currentDate
                 ) % 2) + 1).toInt()
-                DayClasses(
+                PagedDayClasses(
                     isRefreshing = state.isRefreshing,
                     onRefresh = { scheduleViewModel.updateSchedule() },
                     classes = state.schedule.classes,
@@ -77,8 +88,9 @@ fun ScheduleTopAppBar(date: LocalDate, onCurrentDateChange: (LocalDate) -> Unit)
     })
 }
 
+@OptIn(ExperimentalPagerApi::class)
 @Composable
-fun DayClasses(
+fun PagedDayClasses(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     classes: List<Class>,
@@ -91,14 +103,28 @@ fun DayClasses(
         state = rememberSwipeRefreshState(isRefreshing = isRefreshing),
         onRefresh = onRefresh
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            items(classes) {
-                if ((it.dayOfWeek == dayOfWeek) && (it.week == week))
-                    ClassCard(it)
-            }
+        val startIndex = Int.MAX_VALUE / 2
+        val pagerState = rememberPagerState(initialPage = startIndex)
+        HorizontalPager(count = Int.MAX_VALUE, state = pagerState) { index ->
+            val page = index - startIndex
+            DayClasses(classes = classes, dayOfWeek = dayOfWeek, week = week)
+        }
+    }
+}
+
+@Composable
+fun DayClasses(
+    classes: List<Class>,
+    dayOfWeek: DayOfWeek,
+    week: Int,
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        items(classes) {
+            if ((it.dayOfWeek == dayOfWeek) && (it.week == week))
+                ClassCard(it)
         }
     }
 }
@@ -169,7 +195,7 @@ fun ClassCard(classData: Class) {
 @Preview
 @Composable
 fun PreviewDayClasses() {
-    DayClasses(false, {},
+    DayClasses(
         listOf(
             Class(
                 "Лекция",
@@ -204,7 +230,7 @@ fun PreviewDayClasses() {
                 LocalTime.of(12, 0),
                 LocalTime.of(13, 30)
             )
-        ), DayOfWeek.MONDAY, 1, LocalDate.now(), {}
+        ), DayOfWeek.MONDAY, 1
     )
 }
 
