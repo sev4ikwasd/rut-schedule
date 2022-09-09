@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -132,8 +133,8 @@ fun DayClasses(
     val displayedClasses = classes.filter { it.dayOfWeek == dayOfWeek && it.week == week }
     if (displayedClasses.isNotEmpty()) {
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(displayedClasses) {
                 ClassCard(it)
@@ -149,9 +150,11 @@ fun ClassCard(classData: Class) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 8.dp), shadowElevation = 4.dp
+            .padding(horizontal = 8.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(8.dp)
     ) {
-        Column(modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)) {
+        Column(modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
