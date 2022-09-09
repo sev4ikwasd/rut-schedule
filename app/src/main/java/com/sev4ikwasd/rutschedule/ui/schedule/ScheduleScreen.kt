@@ -60,22 +60,32 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel) {
                         }
                     }
                 }
-            ) {
-                PagedDayClasses(
-                    isRefreshing = state.isRefreshing,
-                    onRefresh = { scheduleViewModel.updateSchedule() },
-                    classes = state.schedule.classes,
-                    dateFrom = state.schedule.dateFrom,
-                    startDate = startDate.value,
-                    pagerStartIndex = pagerStartIndex,
-                    pagerState = pagerState
-                )
+            ) { padding ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(
+                            top = padding.calculateTopPadding(),
+                            bottom = padding.calculateBottomPadding()
+                        )
+                ){
+                    PagedDayClasses(
+                        isRefreshing = state.isRefreshing,
+                        onRefresh = { scheduleViewModel.updateSchedule() },
+                        classes = state.schedule.classes,
+                        dateFrom = state.schedule.dateFrom,
+                        startDate = startDate.value,
+                        pagerStartIndex = pagerStartIndex,
+                        pagerState = pagerState
+                    )
+                }
             }
         }
         is ScheduleUiState.Error -> Box(modifier = Modifier)
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleTopAppBar(date: LocalDate, onCurrentDateChange: (LocalDate) -> Unit) {
     val datePickerDialog = DatePickerDialog(
@@ -147,12 +157,10 @@ fun DayClasses(
 
 @Composable
 fun ClassCard(classData: Class) {
-    Surface(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(8.dp)
+            .padding(horizontal = 8.dp)
     ) {
         Column(modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp)) {
             Row(
