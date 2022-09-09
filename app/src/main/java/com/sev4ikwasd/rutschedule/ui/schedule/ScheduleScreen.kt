@@ -8,9 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -18,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
+import com.google.accompanist.pager.PagerState
 import com.google.accompanist.pager.rememberPagerState
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -28,7 +27,7 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
 @Composable
 fun ScheduleScreen(scheduleViewModel: ScheduleViewModel) {
     when (val state = scheduleViewModel.uiState.collectAsState().value) {
@@ -42,29 +41,28 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel) {
                 color = MaterialTheme.colorScheme.primary
             )
         }
-        is ScheduleUiState.Loaded ->
+        is ScheduleUiState.Loaded -> {
+            val pagerStartIndex = Int.MAX_VALUE / 2
+            val startDate = remember { mutableStateOf(LocalDate.now()) }
+            val pagerState = rememberPagerState(initialPage = pagerStartIndex)
             Scaffold(
                 topBar = {
-                    ScheduleTopAppBar(state.currentDate) { scheduleViewModel.updateCurrentDate(it) }
+                    val pagerCurrentDate =
+                        startDate.value.plusDays((pagerState.currentPage - pagerStartIndex).toLong())
+                    ScheduleTopAppBar(pagerCurrentDate) { startDate.value = it }
                 }
             ) {
-                val dateFromWeekBeginning =
-                    state.schedule.dateFrom.minusDays(state.schedule.dateFrom.dayOfWeek.ordinal.toLong())
-                val currentDate = state.currentDate
-                val week = ((ChronoUnit.WEEKS.between(
-                    dateFromWeekBeginning,
-                    currentDate
-                ) % 2) + 1).toInt()
                 PagedDayClasses(
                     isRefreshing = state.isRefreshing,
                     onRefresh = { scheduleViewModel.updateSchedule() },
                     classes = state.schedule.classes,
-                    dayOfWeek = state.currentDate.dayOfWeek,
-                    week = week,
-                    date = state.currentDate,
-                    onCurrentDateChange = { scheduleViewModel.updateCurrentDate(it) }
+                    dateFrom = state.schedule.dateFrom,
+                    startDate = startDate.value,
+                    pagerStartIndex = pagerStartIndex,
+                    pagerState = pagerState
                 )
             }
+        }
         is ScheduleUiState.Error -> Box(modifier = Modifier)
     }
 }
@@ -82,7 +80,7 @@ fun ScheduleTopAppBar(date: LocalDate, onCurrentDateChange: (LocalDate) -> Unit)
         Button(onClick = {
             datePickerDialog.show()
         }) {
-            val formattedDate = date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+            val formattedDate = date.format(DateTimeFormatter.ofPattern("E, d LLL y"))
             Text(text = formattedDate)
         }
     })
@@ -94,20 +92,25 @@ fun PagedDayClasses(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     classes: List<Class>,
-    dayOfWeek: DayOfWeek,
-    week: Int,
-    date: LocalDate,
-    onCurrentDateChange: (LocalDate) -> Unit
+    dateFrom: LocalDate,
+    startDate: LocalDate,
+    pagerStartIndex: Int,
+    pagerState: PagerState
 ) {
     SwipeRefresh(
         state = rememberSwipeRefreshState(isRefreshing = isRefreshing),
         onRefresh = onRefresh
     ) {
-        val startIndex = Int.MAX_VALUE / 2
-        val pagerState = rememberPagerState(initialPage = startIndex)
         HorizontalPager(count = Int.MAX_VALUE, state = pagerState) { index ->
-            val page = index - startIndex
-            DayClasses(classes = classes, dayOfWeek = dayOfWeek, week = week)
+            val page = index - pagerStartIndex
+            val dateFromWeekBeginning = dateFrom.minusDays(dateFrom.dayOfWeek.ordinal.toLong())
+            val pagerCurrentDate = startDate.plusDays(page.toLong())
+            val week =
+                ((ChronoUnit.WEEKS.between(
+                    dateFromWeekBeginning,
+                    pagerCurrentDate
+                ) % 2) + 1).toInt()
+            DayClasses(classes = classes, dayOfWeek = pagerCurrentDate.dayOfWeek, week = week)
         }
     }
 }
@@ -118,14 +121,19 @@ fun DayClasses(
     dayOfWeek: DayOfWeek,
     week: Int,
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        items(classes) {
-            if ((it.dayOfWeek == dayOfWeek) && (it.week == week))
+    val displayedClasses = classes.filter { it.dayOfWeek == dayOfWeek && it.week == week }
+    if (displayedClasses.isNotEmpty()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            items(displayedClasses) {
                 ClassCard(it)
+            }
         }
+    }
+    else {
+        Text(text = "На этот день нет пар")
     }
 }
 

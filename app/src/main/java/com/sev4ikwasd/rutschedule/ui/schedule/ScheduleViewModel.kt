@@ -10,11 +10,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 sealed class ScheduleUiState {
     object Loading : ScheduleUiState()
-    data class Loaded(val isRefreshing: Boolean, val schedule: Schedule, val currentDate: LocalDate) : ScheduleUiState()
+    data class Loaded(val isRefreshing: Boolean, val schedule: Schedule) : ScheduleUiState()
     object Error : ScheduleUiState()
 }
 
@@ -35,21 +34,12 @@ class ScheduleViewModel(
             }
             when (val result = scheduleRepository.getSchedule(194657)) {
                 is Result.Success -> _uiState.value =
-                    ScheduleUiState.Loaded(false, result.data, LocalDate.now())
+                    ScheduleUiState.Loaded(false, result.data)
                 is Result.Error -> _uiState.value = ScheduleUiState.Error
             }
         }
 
     }
-
-    fun updateCurrentDate(date: LocalDate) {
-        viewModelScope.launch {
-            if (_uiState.value is ScheduleUiState.Loaded) {
-                _uiState.update { (it as ScheduleUiState.Loaded).copy(currentDate = date) }
-            }
-        }
-    }
-
 
     companion object {
         fun provideFactory(
