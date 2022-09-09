@@ -21,6 +21,7 @@ import com.google.accompanist.pager.rememberPagerState
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.sev4ikwasd.rutschedule.model.Class
+import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -45,11 +46,18 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel) {
             val pagerStartIndex = Int.MAX_VALUE / 2
             val startDate = remember { mutableStateOf(LocalDate.now()) }
             val pagerState = rememberPagerState(initialPage = pagerStartIndex)
+            val scope = rememberCoroutineScope()
             Scaffold(
                 topBar = {
                     val pagerCurrentDate =
                         startDate.value.plusDays((pagerState.currentPage - pagerStartIndex).toLong())
-                    ScheduleTopAppBar(pagerCurrentDate) { startDate.value = it }
+                    ScheduleTopAppBar(pagerCurrentDate) {
+                        scope.launch {
+                            val daysBetween = (ChronoUnit.DAYS.between(it, startDate.value)).toInt()
+                            val page = pagerStartIndex - daysBetween
+                            pagerState.animateScrollToPage(page)
+                        }
+                    }
                 }
             ) {
                 PagedDayClasses(
@@ -131,8 +139,7 @@ fun DayClasses(
                 ClassCard(it)
             }
         }
-    }
-    else {
+    } else {
         Text(text = "На этот день нет пар")
     }
 }
