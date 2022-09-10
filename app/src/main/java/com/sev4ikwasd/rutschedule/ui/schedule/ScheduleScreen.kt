@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -68,7 +67,7 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel) {
                             top = padding.calculateTopPadding(),
                             bottom = padding.calculateBottomPadding()
                         )
-                ){
+                ) {
                     PagedDayClasses(
                         isRefreshing = state.isRefreshing,
                         onRefresh = { scheduleViewModel.updateSchedule() },
