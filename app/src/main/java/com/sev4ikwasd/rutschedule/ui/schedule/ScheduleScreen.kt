@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,7 +32,7 @@ import java.time.temporal.ChronoUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
 @Composable
-fun ScheduleScreen(scheduleViewModel: ScheduleViewModel) {
+fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () -> Unit) {
     when (val state = scheduleViewModel.uiState.collectAsState().value) {
         is ScheduleUiState.Loading -> Box(
             modifier = Modifier
@@ -51,13 +53,13 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel) {
                 topBar = {
                     val pagerCurrentDate =
                         startDate.value.plusDays((pagerState.currentPage - pagerStartIndex).toLong())
-                    ScheduleTopAppBar(pagerCurrentDate) {
+                    ScheduleTopAppBar(date = pagerCurrentDate, onCurrentDateChange = {
                         scope.launch {
                             val daysBetween = (ChronoUnit.DAYS.between(it, startDate.value)).toInt()
                             val page = pagerStartIndex - daysBetween
                             pagerState.animateScrollToPage(page)
                         }
-                    }
+                    }, onNavigateToGroups = onNavigateToGroups)
                 }
             ) { padding ->
                 Box(
@@ -86,7 +88,11 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScheduleTopAppBar(date: LocalDate, onCurrentDateChange: (LocalDate) -> Unit) {
+fun ScheduleTopAppBar(
+    date: LocalDate,
+    onCurrentDateChange: (LocalDate) -> Unit,
+    onNavigateToGroups: () -> Unit
+) {
     val datePickerDialog = DatePickerDialog(
         LocalContext.current,
         { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
@@ -100,6 +106,14 @@ fun ScheduleTopAppBar(date: LocalDate, onCurrentDateChange: (LocalDate) -> Unit)
         }) {
             val formattedDate = date.format(DateTimeFormatter.ofPattern("E, d LLL y"))
             Text(text = formattedDate)
+        }
+    }, navigationIcon = {
+        IconButton(onClick = onNavigateToGroups) {
+            Icon(
+                imageVector = Icons.Filled.ArrowBack,
+                contentDescription = "Вернутся к выбору группы",
+                tint = MaterialTheme.colorScheme.primary
+            )
         }
     })
 }
@@ -150,7 +164,9 @@ fun DayClasses(
             }
         }
     } else {
-        Text(text = "На этот день нет пар")
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(text = "На этот день нет пар")
+        }
     }
 }
 

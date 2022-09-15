@@ -3,6 +3,7 @@ package com.sev4ikwasd.rutschedule.data.impl
 import com.sev4ikwasd.rutschedule.data.Result
 import com.sev4ikwasd.rutschedule.data.ScheduleRepository
 import com.sev4ikwasd.rutschedule.model.Class
+import com.sev4ikwasd.rutschedule.model.Group
 import com.sev4ikwasd.rutschedule.model.Schedule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,11 +15,47 @@ import java.time.LocalTime
 class JSoupScheduleRepository : ScheduleRepository {
     private val connection = Jsoup.newSession()
 
+    override suspend fun getAllGroups(): Result<List<Group>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                connection.newRequest()
+                connection.url(Constants.RUT_SITE_BASE_URL)
+                val parsedGroups = ArrayList<Group>()
+                val document = connection.get()
+                val universities =
+                    document.getElementsByClass("timetable-catalog")[0].getElementsByClass("info-block info-block_collapse show")
+                for (university in universities) {
+                    val courses = university.children()[2].children()[0]
+                    for (course in courses.children()) {
+                        val groups = course.children()[1]
+                        for (group in groups.children()) {
+                            if (group.child(0).tag().name.equals("a")) {
+                                val groupName = group.child(0).text()
+                                val groupId = group.child(0).attr("href").substring(11).toInt()
+                                parsedGroups.add(Group(groupName, groupId))
+                            } else {
+                                val collapsedGroups = group.child(0).child(1)
+                                for (collapsedGroup in collapsedGroups.children()) {
+                                    val groupName = collapsedGroup.text()
+                                    val groupId = collapsedGroup.attr("href").substring(11).toInt()
+                                    parsedGroups.add(Group(groupName, groupId))
+                                }
+                            }
+                        }
+                    }
+                }
+                Result.Success(parsedGroups)
+            } catch (e: Exception) {
+                Result.Error(IllegalArgumentException("Error occurred while parsing groups"))
+            }
+        }
+    }
+
     override suspend fun getSchedule(id: Int): Result<Schedule> {
         return withContext(Dispatchers.IO) {
             try {
                 connection.newRequest()
-                connection.url(Constants.RUT_SITE_BASE_UTL + "/" + id)
+                connection.url(Constants.RUT_SITE_BASE_URL + "/" + id)
                 val document = connection.get()
                 val classNumberToTimePeriodMap = HashMap<Int, TimePeriod>()
                 val classes = ArrayList<Class>()
@@ -103,5 +140,5 @@ private data class TimePeriod(
 )
 
 object Constants {
-    const val RUT_SITE_BASE_UTL = "https://miit.ru/timetable"
+    const val RUT_SITE_BASE_URL = "https://miit.ru/timetable"
 }

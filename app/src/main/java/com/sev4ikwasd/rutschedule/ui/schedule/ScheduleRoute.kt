@@ -4,7 +4,8 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun ScheduleRoute(
-    scheduleViewModel: ScheduleViewModel
+    scheduleViewModel: ScheduleViewModel,
+    onNavigateToGroups: () -> Unit
 ) {
-    ScheduleScreen(scheduleViewModel)
+    ScheduleScreen(scheduleViewModel, onNavigateToGroups)
 }
