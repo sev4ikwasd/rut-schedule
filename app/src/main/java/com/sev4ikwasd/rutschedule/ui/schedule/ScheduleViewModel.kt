@@ -11,13 +11,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-sealed class ScheduleUiState {
-    object Loading : ScheduleUiState()
-    data class Loaded(val isRefreshing: Boolean, val schedule: Schedule) : ScheduleUiState()
-    object Error : ScheduleUiState()
+sealed interface ScheduleUiState {
+    object Loading : ScheduleUiState
+    data class Loaded(val isRefreshing: Boolean, val schedule: Schedule) : ScheduleUiState
+    object Error : ScheduleUiState
 }
 
 class ScheduleViewModel(
+    private val groupId: Int,
     private val scheduleRepository: ScheduleRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<ScheduleUiState>(ScheduleUiState.Loading)
@@ -32,7 +33,7 @@ class ScheduleViewModel(
             if (_uiState.value is ScheduleUiState.Loaded) {
                 _uiState.update { (it as ScheduleUiState.Loaded).copy(isRefreshing = true) }
             }
-            when (val result = scheduleRepository.getSchedule(194657)) {
+            when (val result = scheduleRepository.getSchedule(groupId)) {
                 is Result.Success -> _uiState.value =
                     ScheduleUiState.Loaded(false, result.data)
                 is Result.Error -> _uiState.value = ScheduleUiState.Error
@@ -43,11 +44,12 @@ class ScheduleViewModel(
 
     companion object {
         fun provideFactory(
+            groupId: Int,
             scheduleRepository: ScheduleRepository
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return ScheduleViewModel(scheduleRepository) as T
+                return ScheduleViewModel(groupId, scheduleRepository) as T
             }
         }
     }

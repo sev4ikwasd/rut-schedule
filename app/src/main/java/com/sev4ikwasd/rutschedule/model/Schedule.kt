@@ -4,6 +4,8 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 
+data class Group(val groupName: String, val groupId: Int)
+
 data class Schedule(
     val group: String,
     val classes: List<Class>,
