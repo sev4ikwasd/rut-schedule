@@ -49,7 +49,8 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
             val startDate = remember { mutableStateOf(LocalDate.now()) }
             val pagerState = rememberPagerState(initialPage = pagerStartIndex)
             val scope = rememberCoroutineScope()
-            Scaffold(
+            val snackbarHostState = remember { SnackbarHostState() }
+            Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
                 topBar = {
                     val pagerCurrentDate =
                         startDate.value.plusDays((pagerState.currentPage - pagerStartIndex).toLong())
@@ -70,6 +71,11 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
                             bottom = padding.calculateBottomPadding()
                         )
                 ) {
+                    if (state.isCacheUsed) {
+                        LaunchedEffect(snackbarHostState) {
+                            snackbarHostState.showSnackbar("Расписание может быть неактуальным")
+                        }
+                    }
                     PagedDayClasses(
                         isRefreshing = state.isRefreshing,
                         onRefresh = { scheduleViewModel.updateSchedule() },
@@ -82,7 +88,14 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
                 }
             }
         }
-        is ScheduleUiState.Error -> Box(modifier = Modifier)
+        is ScheduleUiState.Error -> Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "Произошла ошибка при загрузке расписания")
+        }
     }
 }
 

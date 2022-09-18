@@ -54,7 +54,17 @@ fun GroupsScreen(groupsViewModel: GroupsViewModel, onNavigateToSchedule: (Int) -
                 }
             }
         }
-        is GroupsUiState.Error -> Box(modifier = Modifier)
+        is GroupsUiState.Error -> Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Произошла ошибка при загрузке групп",
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
     }
 }
 

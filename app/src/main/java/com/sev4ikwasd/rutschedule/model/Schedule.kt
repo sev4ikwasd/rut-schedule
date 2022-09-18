@@ -7,21 +7,12 @@ import java.time.LocalTime
 data class Group(val groupName: String, val groupId: Int)
 
 data class Schedule(
+    val groupId: Int,
     val group: String,
     val classes: List<Class>,
     val dateFrom: LocalDate,
     val dateTo: LocalDate
-) {
-    fun isEmpty(): Boolean {
-        return (group == "") && (classes.isEmpty())
-    }
-
-    companion object {
-        fun empty(): Schedule {
-            return Schedule("", emptyList(), LocalDate.now(), LocalDate.now())
-        }
-    }
-}
+)
 
 data class Class(
     val type: String,

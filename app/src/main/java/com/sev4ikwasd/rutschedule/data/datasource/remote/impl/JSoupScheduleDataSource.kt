@@ -1,7 +1,7 @@
-package com.sev4ikwasd.rutschedule.data.impl
+package com.sev4ikwasd.rutschedule.data.datasource.remote.impl
 
 import com.sev4ikwasd.rutschedule.data.Result
-import com.sev4ikwasd.rutschedule.data.ScheduleRepository
+import com.sev4ikwasd.rutschedule.data.datasource.remote.RemoteScheduleDataSource
 import com.sev4ikwasd.rutschedule.model.Class
 import com.sev4ikwasd.rutschedule.model.Group
 import com.sev4ikwasd.rutschedule.model.Schedule
@@ -12,7 +12,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 
-class JSoupScheduleRepository : ScheduleRepository {
+class JSoupScheduleDataSource : RemoteScheduleDataSource {
     private val connection = Jsoup.newSession()
 
     override suspend fun getAllGroups(): Result<List<Group>> {
@@ -121,6 +121,7 @@ class JSoupScheduleRepository : ScheduleRepository {
                 }
                 Result.Success(
                     Schedule(
+                        id,
                         group,
                         classes,
                         localDates[0],

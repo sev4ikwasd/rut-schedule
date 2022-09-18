@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.sev4ikwasd.rutschedule.data.Result
-import com.sev4ikwasd.rutschedule.data.ScheduleRepository
+import com.sev4ikwasd.rutschedule.data.repository.ScheduleRepository
 import com.sev4ikwasd.rutschedule.model.Group
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
