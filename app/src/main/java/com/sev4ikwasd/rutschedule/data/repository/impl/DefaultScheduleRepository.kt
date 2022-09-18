@@ -8,11 +8,9 @@ import com.sev4ikwasd.rutschedule.data.repository.ScheduleRepository
 import com.sev4ikwasd.rutschedule.data.toCacheableResult
 import com.sev4ikwasd.rutschedule.model.Group
 import com.sev4ikwasd.rutschedule.model.Schedule
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.withContext
 
 class DefaultScheduleRepository(
     private val remoteScheduleDataSource: RemoteScheduleDataSource,
@@ -25,16 +23,14 @@ class DefaultScheduleRepository(
     override suspend fun getSchedule(id: Int): StateFlow<CacheableResult<Schedule>> {
         val mutableResult =
             MutableStateFlow(localScheduleDataSource.getSchedule(id).toCacheableResult())
-        withContext(Dispatchers.IO) {
-            val schedule = remoteScheduleDataSource.getSchedule(id)
-            if (schedule is Result.Success) {
-                mutableResult.value = CacheableResult.SuccessfullyUpdated(schedule.data)
-                localScheduleDataSource.changeSchedule(schedule.data)
-            } else {
-                if (mutableResult.value is CacheableResult.SuccessfullyUpdated)
-                    mutableResult.value =
-                        CacheableResult.NotUpdated((mutableResult.value as CacheableResult.SuccessfullyUpdated<Schedule>).data)
-            }
+        val schedule = remoteScheduleDataSource.getSchedule(id)
+        if (schedule is Result.Success) {
+            mutableResult.value = CacheableResult.SuccessfullyUpdated(schedule.data)
+            localScheduleDataSource.changeSchedule(schedule.data)
+        } else {
+            if (mutableResult.value is CacheableResult.SuccessfullyUpdated)
+                mutableResult.value =
+                    CacheableResult.NotUpdated((mutableResult.value as CacheableResult.SuccessfullyUpdated<Schedule>).data)
         }
         return mutableResult.asStateFlow()
     }

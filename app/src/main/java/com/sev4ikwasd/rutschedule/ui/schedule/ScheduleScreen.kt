@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.ExperimentalPagerApi
@@ -50,19 +51,17 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
             val pagerState = rememberPagerState(initialPage = pagerStartIndex)
             val scope = rememberCoroutineScope()
             val snackbarHostState = remember { SnackbarHostState() }
-            Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-                topBar = {
-                    val pagerCurrentDate =
-                        startDate.value.plusDays((pagerState.currentPage - pagerStartIndex).toLong())
-                    ScheduleTopAppBar(date = pagerCurrentDate, onCurrentDateChange = {
-                        scope.launch {
-                            val daysBetween = (ChronoUnit.DAYS.between(it, startDate.value)).toInt()
-                            val page = pagerStartIndex - daysBetween
-                            pagerState.animateScrollToPage(page)
-                        }
-                    }, onNavigateToGroups = onNavigateToGroups)
-                }
-            ) { padding ->
+            Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }, topBar = {
+                val pagerCurrentDate =
+                    startDate.value.plusDays((pagerState.currentPage - pagerStartIndex).toLong())
+                ScheduleTopAppBar(date = pagerCurrentDate, onCurrentDateChange = {
+                    scope.launch {
+                        val daysBetween = (ChronoUnit.DAYS.between(it, startDate.value)).toInt()
+                        val page = pagerStartIndex - daysBetween
+                        pagerState.animateScrollToPage(page)
+                    }
+                }, onNavigateToGroups = onNavigateToGroups)
+            }) { padding ->
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -102,13 +101,10 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleTopAppBar(
-    date: LocalDate,
-    onCurrentDateChange: (LocalDate) -> Unit,
-    onNavigateToGroups: () -> Unit
+    date: LocalDate, onCurrentDateChange: (LocalDate) -> Unit, onNavigateToGroups: () -> Unit
 ) {
     val datePickerDialog = DatePickerDialog(
-        LocalContext.current,
-        { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
+        LocalContext.current, { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
             onCurrentDateChange(LocalDate.of(year, month + 1, dayOfMonth))
         }, date.year, date.monthValue - 1, date.dayOfMonth
     )
@@ -143,18 +139,15 @@ fun PagedDayClasses(
     pagerState: PagerState
 ) {
     SwipeRefresh(
-        state = rememberSwipeRefreshState(isRefreshing = isRefreshing),
-        onRefresh = onRefresh
+        state = rememberSwipeRefreshState(isRefreshing = isRefreshing), onRefresh = onRefresh
     ) {
         HorizontalPager(count = Int.MAX_VALUE, state = pagerState) { index ->
             val page = index - pagerStartIndex
             val dateFromWeekBeginning = dateFrom.minusDays(dateFrom.dayOfWeek.ordinal.toLong())
             val pagerCurrentDate = startDate.plusDays(page.toLong())
-            val week =
-                ((ChronoUnit.WEEKS.between(
-                    dateFromWeekBeginning,
-                    pagerCurrentDate
-                ) % 2) + 1).toInt()
+            val week = ((ChronoUnit.WEEKS.between(
+                dateFromWeekBeginning, pagerCurrentDate
+            ) % 2) + 1).toInt()
             DayClasses(classes = classes, dayOfWeek = pagerCurrentDate.dayOfWeek, week = week)
         }
     }
@@ -167,18 +160,19 @@ fun DayClasses(
     week: Int,
 ) {
     val displayedClasses = classes.filter { it.dayOfWeek == dayOfWeek && it.week == week }
-    if (displayedClasses.isNotEmpty()) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        if (displayedClasses.isNotEmpty()) {
             items(displayedClasses) {
                 ClassCard(it)
             }
-        }
-    } else {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = "На этот день нет пар")
+        } else {
+            items(1) { // Swipe refresh not working without list
+                Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "На этот день нет пар", textAlign = TextAlign.Center)
+                }
+            }
         }
     }
 }
@@ -213,21 +207,18 @@ fun ClassCard(classData: Class) {
                     )
                 ) {
                     Text(
-                        text = classData.type,
-                        style = MaterialTheme.typography.bodySmall
+                        text = classData.type, style = MaterialTheme.typography.bodySmall
                     )
                 }
                 Spacer(modifier = Modifier.padding(4.dp))
                 Text(
-                    text = classData.name,
-                    style = MaterialTheme.typography.bodyMedium
+                    text = classData.name, style = MaterialTheme.typography.bodyMedium
                 )
             }
             if (classData.classroom.isNotEmpty()) {
                 Spacer(modifier = Modifier.padding(2.dp))
                 Text(
-                    text = classData.classroom,
-                    style = MaterialTheme.typography.bodySmall
+                    text = classData.classroom, style = MaterialTheme.typography.bodySmall
                 )
             }
             if (classData.teachers.isNotEmpty()) {
@@ -238,8 +229,7 @@ fun ClassCard(classData: Class) {
                 }
                 teachersString = teachersString.substring(0, teachersString.length - 2)
                 Text(
-                    text = teachersString,
-                    style = MaterialTheme.typography.bodySmall
+                    text = teachersString, style = MaterialTheme.typography.bodySmall
                 )
             }
         }
@@ -261,8 +251,7 @@ fun PreviewDayClasses() {
                 1,
                 LocalTime.of(8, 30),
                 LocalTime.of(10, 0)
-            ),
-            Class(
+            ), Class(
                 "Лекция",
                 "Математика",
                 listOf("Иванов И.И.", "Андреев А.А."),
@@ -272,8 +261,7 @@ fun PreviewDayClasses() {
                 2,
                 LocalTime.of(10, 15),
                 LocalTime.of(11, 45)
-            ),
-            Class(
+            ), Class(
                 "Лекция",
                 "Математика",
                 listOf("Иванов И.И.", "Андреев А.А."),
