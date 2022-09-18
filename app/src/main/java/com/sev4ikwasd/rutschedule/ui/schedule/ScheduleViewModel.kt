@@ -3,8 +3,8 @@ package com.sev4ikwasd.rutschedule.ui.schedule
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.sev4ikwasd.rutschedule.data.Result
-import com.sev4ikwasd.rutschedule.data.ScheduleRepository
+import com.sev4ikwasd.rutschedule.data.CacheableResult
+import com.sev4ikwasd.rutschedule.data.repository.ScheduleRepository
 import com.sev4ikwasd.rutschedule.model.Schedule
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,7 +13,9 @@ import kotlinx.coroutines.launch
 
 sealed interface ScheduleUiState {
     object Loading : ScheduleUiState
-    data class Loaded(val isRefreshing: Boolean, val schedule: Schedule) : ScheduleUiState
+    data class Loaded(val isRefreshing: Boolean, val isCacheUsed: Boolean, val schedule: Schedule) :
+        ScheduleUiState
+
     object Error : ScheduleUiState
 }
 
@@ -33,13 +35,24 @@ class ScheduleViewModel(
             if (_uiState.value is ScheduleUiState.Loaded) {
                 _uiState.update { (it as ScheduleUiState.Loaded).copy(isRefreshing = true) }
             }
-            when (val result = scheduleRepository.getSchedule(groupId)) {
-                is Result.Success -> _uiState.value =
-                    ScheduleUiState.Loaded(false, result.data)
-                is Result.Error -> _uiState.value = ScheduleUiState.Error
+            scheduleRepository.getSchedule(groupId).collect {
+                when (it) {
+                    is CacheableResult.SuccessfullyUpdated -> _uiState.value =
+                        ScheduleUiState.Loaded(
+                            isRefreshing = false,
+                            isCacheUsed = false,
+                            schedule = it.data
+                        )
+                    is CacheableResult.NotUpdated -> _uiState.value =
+                        ScheduleUiState.Loaded(
+                            isRefreshing = false,
+                            isCacheUsed = true,
+                            schedule = it.data
+                        )
+                    is CacheableResult.Error -> _uiState.value = ScheduleUiState.Error
+                }
             }
         }
-
     }
 
     companion object {
