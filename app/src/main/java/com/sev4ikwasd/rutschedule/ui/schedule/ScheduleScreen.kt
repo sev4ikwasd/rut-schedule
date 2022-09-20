@@ -215,10 +215,15 @@ fun ClassCard(classData: Class) {
                     text = classData.name, style = MaterialTheme.typography.bodyMedium
                 )
             }
-            if (classData.classroom.isNotEmpty()) {
+            if (classData.classrooms.isNotEmpty()) {
                 Spacer(modifier = Modifier.padding(2.dp))
+                var classroomsString = "Аудитории: "
+                for (classroom in classData.classrooms) {
+                    classroomsString += "$classroom, "
+                }
+                classroomsString = classroomsString.substring(0, classroomsString.length - 2)
                 Text(
-                    text = classData.classroom, style = MaterialTheme.typography.bodySmall
+                    text = classroomsString, style = MaterialTheme.typography.bodySmall
                 )
             }
             if (classData.teachers.isNotEmpty()) {
@@ -245,7 +250,7 @@ fun PreviewDayClasses() {
                 "Лекция",
                 "Математика",
                 listOf("Иванов И.И.", "Андреев А.А."),
-                "Аудитория 420",
+                listOf(420),
                 1,
                 DayOfWeek.MONDAY,
                 1,
@@ -255,7 +260,7 @@ fun PreviewDayClasses() {
                 "Лекция",
                 "Математика",
                 listOf("Иванов И.И.", "Андреев А.А."),
-                "Аудитория 420",
+                listOf(420, 530),
                 1,
                 DayOfWeek.MONDAY,
                 2,
@@ -265,7 +270,7 @@ fun PreviewDayClasses() {
                 "Лекция",
                 "Математика",
                 listOf("Иванов И.И.", "Андреев А.А."),
-                "Аудитория 420",
+                listOf(420),
                 1,
                 DayOfWeek.MONDAY,
                 3,
@@ -284,7 +289,7 @@ fun PreviewClassCard() {
             "Лекция",
             "Математика",
             listOf("Иванов И.И.", "Андреев А.А."),
-            "Аудитория 420",
+            listOf(420),
             1,
             DayOfWeek.MONDAY,
             1,

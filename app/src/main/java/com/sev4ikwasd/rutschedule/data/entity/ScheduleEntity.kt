@@ -34,7 +34,7 @@ data class ClassEntity(
     val type: String,
     val name: String,
     val teachers: List<String>,
-    val classroom: String,
+    val classrooms: List<Int>,
     val week: Int,
     val dayOfWeek: DayOfWeek,
     val classNumber: Int,
@@ -53,7 +53,7 @@ data class ScheduleWithClassesEntity(
 )
 
 fun ClassEntity.toDomain(): Class {
-    return Class(type, name, teachers, classroom, week, dayOfWeek, classNumber, timeFrom, timeTo)
+    return Class(type, name, teachers, classrooms, week, dayOfWeek, classNumber, timeFrom, timeTo)
 }
 
 fun Class.fromDomain(): ClassEntity {
@@ -61,7 +61,7 @@ fun Class.fromDomain(): ClassEntity {
         type = type,
         name = name,
         teachers = teachers,
-        classroom = classroom,
+        classrooms = classrooms,
         week = week,
         dayOfWeek = dayOfWeek,
         classNumber = classNumber,

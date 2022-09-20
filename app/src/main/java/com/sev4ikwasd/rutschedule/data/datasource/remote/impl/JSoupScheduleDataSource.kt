@@ -15,6 +15,16 @@ import java.time.LocalTime
 class JSoupScheduleDataSource : RemoteScheduleDataSource {
     private val connection = Jsoup.newSession()
 
+    private val stringToDayOfWeek = mapOf(
+        "Понедельник" to DayOfWeek.MONDAY,
+        "Вторник" to DayOfWeek.TUESDAY,
+        "Среда" to DayOfWeek.WEDNESDAY,
+        "Четверг" to DayOfWeek.THURSDAY,
+        "Пятница" to DayOfWeek.FRIDAY,
+        "Суббота" to DayOfWeek.SATURDAY,
+        "Воскресенье" to DayOfWeek.SUNDAY,
+    )
+
     override suspend fun getAllGroups(): Result<List<Group>> {
         return withContext(Dispatchers.IO) {
             try {
@@ -63,6 +73,11 @@ class JSoupScheduleDataSource : RemoteScheduleDataSource {
                 for (week in wholeSchedule.children()) {
                     val weekNumber = week.id().substring(5).toInt()
                     val row = week.getElementsByTag("table")[0].child(0)
+                    val numberToDayOfWeek = HashMap<Int, DayOfWeek>()
+                    for (i in 1 until row.child(0).childrenSize()) {
+                        val dayOfWeekString = row.child(0).children()[i].ownText()
+                        numberToDayOfWeek[i] = stringToDayOfWeek[dayOfWeekString]!!
+                    }
                     for (i in 1 until row.childrenSize()) {
                         val column = row.child(i)
                         val classNumberToTimePeriod = column.child(0)
@@ -86,18 +101,24 @@ class JSoupScheduleDataSource : RemoteScheduleDataSource {
                             val type = cell.child(0).child(0).text()
                             val params = cell.getElementsByClass("mb-2")
                             val teachers = ArrayList<String>()
-                            for (k in 0..params.size - 2) {
-                                teachers.add(params[k].child(0).text())
+                            val classrooms = ArrayList<Int>()
+                            for (param in params) {
+                                if (param.child(0).classNames().contains("icon-academic-cap")) {
+                                    for (teacher in param.children())
+                                        teachers.add(teacher.text())
+                                } else if (param.child(0).classNames().contains("icon-location")) {
+                                    for (classroom in param.children())
+                                        classrooms.add(classroom.text().substring(10).toInt())
+                                }
                             }
-                            val classroom = cell.child(params.size).child(0).text()
                             classes.add(
                                 Class(
                                     type,
                                     name,
                                     teachers,
-                                    classroom,
+                                    classrooms,
                                     weekNumber,
-                                    DayOfWeek.of(j),
+                                    numberToDayOfWeek[j]!!,
                                     classNumber,
                                     classNumberToTimePeriodMap[classNumber]!!.timeFrom,
                                     classNumberToTimePeriodMap[classNumber]!!.timeTo

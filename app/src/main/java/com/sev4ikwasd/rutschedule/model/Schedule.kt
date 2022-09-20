@@ -18,7 +18,7 @@ data class Class(
     val type: String,
     val name: String,
     val teachers: List<String>,
-    val classroom: String,
+    val classrooms: List<Int>,
     val week: Int,
     val dayOfWeek: DayOfWeek,
     val classNumber: Int,

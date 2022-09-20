@@ -39,4 +39,19 @@ class DatabaseConverters {
     fun stringListToString(strings: List<String>?): String? {
         return strings?.joinToString(";")
     }
+
+    @TypeConverter
+    fun stringToIntList(value: String?): List<Int> {
+        return if (value?.contains(";") == true) value.split(";").map { it.toInt() } else {
+            if ((value != null) && (value.isNotBlank()))
+                listOf(value.toInt())
+            else
+                listOf()
+        }
+    }
+
+    @TypeConverter
+    fun intListToString(ints: List<Int>?): String? {
+        return ints?.map { it.toString() }?.joinToString { ";" }
+    }
 }
