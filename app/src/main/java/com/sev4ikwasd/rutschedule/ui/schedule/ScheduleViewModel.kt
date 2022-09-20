@@ -3,7 +3,7 @@ package com.sev4ikwasd.rutschedule.ui.schedule
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.sev4ikwasd.rutschedule.data.CacheableResult
+import com.sev4ikwasd.rutschedule.data.Result
 import com.sev4ikwasd.rutschedule.data.repository.ScheduleRepository
 import com.sev4ikwasd.rutschedule.model.Schedule
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,21 +35,28 @@ class ScheduleViewModel(
             if (_uiState.value is ScheduleUiState.Loaded) {
                 _uiState.update { (it as ScheduleUiState.Loaded).copy(isRefreshing = true) }
             }
-            scheduleRepository.getSchedule(groupId).collect {
-                when (it) {
-                    is CacheableResult.SuccessfullyUpdated -> _uiState.value =
-                        ScheduleUiState.Loaded(
-                            isRefreshing = false,
-                            isCacheUsed = false,
-                            schedule = it.data
-                        )
-                    is CacheableResult.NotUpdated -> _uiState.value =
-                        ScheduleUiState.Loaded(
-                            isRefreshing = false,
-                            isCacheUsed = true,
-                            schedule = it.data
-                        )
-                    is CacheableResult.Error -> _uiState.value = ScheduleUiState.Error
+            when (val schedule = scheduleRepository.loadSchedule(groupId)) {
+                is Result.Success -> _uiState.value = ScheduleUiState.Loaded(
+                    isRefreshing = true,
+                    isCacheUsed = false,
+                    schedule = schedule.data
+                )
+                is Result.Error -> _uiState.value = ScheduleUiState.Loading
+            }
+            when (val schedule = scheduleRepository.updateSchedule(groupId)) {
+                is Result.Success -> _uiState.value = ScheduleUiState.Loaded(
+                    isRefreshing = false,
+                    isCacheUsed = false,
+                    schedule = schedule.data
+                )
+                is Result.Error -> if (_uiState.value is ScheduleUiState.Loaded) _uiState.value =
+                    ScheduleUiState.Loaded(
+                        isRefreshing = false,
+                        isCacheUsed = true,
+                        schedule = (_uiState.value as ScheduleUiState.Loaded).schedule
+                    )
+                else {
+                    _uiState.value = ScheduleUiState.Error
                 }
             }
         }
