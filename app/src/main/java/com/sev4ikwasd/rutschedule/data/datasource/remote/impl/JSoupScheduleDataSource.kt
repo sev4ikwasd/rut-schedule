@@ -101,14 +101,14 @@ class JSoupScheduleDataSource : RemoteScheduleDataSource {
                             val type = cell.child(0).child(0).text()
                             val params = cell.getElementsByClass("mb-2")
                             val teachers = ArrayList<String>()
-                            val classrooms = ArrayList<Int>()
+                            val classrooms = ArrayList<String>()
                             for (param in params) {
                                 if (param.child(0).classNames().contains("icon-academic-cap")) {
                                     for (teacher in param.children())
                                         teachers.add(teacher.text())
                                 } else if (param.child(0).classNames().contains("icon-location")) {
                                     for (classroom in param.children())
-                                        classrooms.add(classroom.text().substring(10).toInt())
+                                        classrooms.add(classroom.text().substring(10))
                                 }
                             }
                             classes.add(

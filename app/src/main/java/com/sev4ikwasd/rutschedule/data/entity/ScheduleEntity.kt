@@ -34,7 +34,7 @@ data class ClassEntity(
     val type: String,
     val name: String,
     val teachers: List<String>,
-    val classrooms: List<Int>,
+    val classrooms: List<String>,
     val week: Int,
     val dayOfWeek: DayOfWeek,
     val classNumber: Int,
