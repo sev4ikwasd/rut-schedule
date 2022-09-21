@@ -8,7 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -111,6 +111,8 @@ fun ScheduleTopAppBar(
         }, date.year, date.monthValue - 1, date.dayOfMonth
     )
 
+    var displayMenu by remember { mutableStateOf(false) }
+
     CenterAlignedTopAppBar(title = {
         Button(onClick = {
             datePickerDialog.show()
@@ -118,13 +120,17 @@ fun ScheduleTopAppBar(
             val formattedDate = date.format(DateTimeFormatter.ofPattern("E, d LLL y"))
             Text(text = formattedDate)
         }
-    }, navigationIcon = {
-        IconButton(onClick = onNavigateToGroups) {
-            Icon(
-                imageVector = Icons.Filled.ArrowBack,
-                contentDescription = "Вернутся к выбору группы",
-                tint = MaterialTheme.colorScheme.primary
-            )
+    }, actions = {
+        IconButton(onClick = { displayMenu = !displayMenu }) {
+            Icon(Icons.Default.MoreVert, "")
+        }
+        DropdownMenu(
+            expanded = displayMenu,
+            onDismissRequest = { displayMenu = false }
+        ) {
+            DropdownMenuItem(onClick = onNavigateToGroups, text = {
+                Text(text = "Сменить группу")
+            })
         }
     })
 }
