@@ -14,7 +14,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.pager.ExperimentalPagerApi
@@ -201,19 +203,22 @@ fun ClassCard(classData: Class) {
             }
             Spacer(modifier = Modifier.padding(2.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CompositionLocalProvider(
-                    LocalContentColor provides LocalContentColor.current.copy(
-                        alpha = 0.6f
-                    )
-                ) {
-                    Text(
-                        text = classData.type, style = MaterialTheme.typography.bodySmall
-                    )
+                val classTypeAndName = buildAnnotatedString {
+                    withStyle(
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = MaterialTheme.colorScheme.onSurface.copy(
+                                alpha = 0.6f
+                            )
+                        ).toSpanStyle()
+                    ) {
+                        append(text = classData.type)
+                    }
+                    append(text = "  ")
+                    withStyle(style = MaterialTheme.typography.bodyMedium.toSpanStyle()) {
+                        append(text = classData.name)
+                    }
                 }
-                Spacer(modifier = Modifier.padding(4.dp))
-                Text(
-                    text = classData.name, style = MaterialTheme.typography.bodyMedium
-                )
+                Text(text = classTypeAndName)
             }
             if (classData.classrooms.isNotEmpty()) {
                 Spacer(modifier = Modifier.padding(2.dp))
