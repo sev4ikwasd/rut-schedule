@@ -1,12 +1,10 @@
 package com.sev4ikwasd.rutschedule.ui.groups
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.*
@@ -14,27 +12,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.sev4ikwasd.rutschedule.model.Group
+import com.sev4ikwasd.rutschedule.ui.composable.ErrorScreen
+import com.sev4ikwasd.rutschedule.ui.composable.LoadingScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupsScreen(groupsViewModel: GroupsViewModel, onNavigateToSchedule: (Int) -> Unit) {
     when (val state = groupsViewModel.uiState.collectAsState().value) {
-        is GroupsUiState.Loading -> Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
+        is GroupsUiState.Loading -> LoadingScreen()
         is GroupsUiState.Loaded -> {
             Scaffold(topBar = {
                 GroupsTopAppBar()
@@ -54,17 +44,9 @@ fun GroupsScreen(groupsViewModel: GroupsViewModel, onNavigateToSchedule: (Int) -
                 }
             }
         }
-        is GroupsUiState.Error -> Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "Произошла ошибка при загрузке групп",
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
+        is GroupsUiState.Error -> ErrorScreen(
+            errorMessage = "Произошла ошибка при загрузке групп",
+            onRefresh = { groupsViewModel.updateGroups() })
     }
 }
 

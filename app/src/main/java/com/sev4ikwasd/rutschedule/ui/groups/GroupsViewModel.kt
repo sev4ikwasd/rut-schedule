@@ -16,11 +16,15 @@ sealed interface GroupsUiState {
     object Error : GroupsUiState
 }
 
-class GroupsViewModel(scheduleRepository: ScheduleRepository) : ViewModel() {
+class GroupsViewModel(private val scheduleRepository: ScheduleRepository) : ViewModel() {
     private val _uiState = MutableStateFlow<GroupsUiState>(GroupsUiState.Loading)
     val uiState: StateFlow<GroupsUiState> = _uiState
 
     init {
+        updateGroups()
+    }
+
+    fun updateGroups() {
         viewModelScope.launch {
             when (val result = scheduleRepository.getAllGroups()) {
                 is Result.Success -> _uiState.value =

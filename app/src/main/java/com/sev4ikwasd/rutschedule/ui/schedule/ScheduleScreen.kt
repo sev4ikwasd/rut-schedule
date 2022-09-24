@@ -2,11 +2,9 @@ package com.sev4ikwasd.rutschedule.ui.schedule
 
 import android.app.DatePickerDialog
 import android.widget.DatePicker
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
@@ -26,6 +24,8 @@ import com.google.accompanist.pager.rememberPagerState
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.sev4ikwasd.rutschedule.model.Class
+import com.sev4ikwasd.rutschedule.ui.composable.ErrorScreen
+import com.sev4ikwasd.rutschedule.ui.composable.LoadingScreen
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -37,16 +37,7 @@ import java.time.temporal.ChronoUnit
 @Composable
 fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () -> Unit) {
     when (val state = scheduleViewModel.uiState.collectAsState().value) {
-        is ScheduleUiState.Loading -> Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.align(Alignment.Center),
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
+        is ScheduleUiState.Loading -> LoadingScreen()
         is ScheduleUiState.Loaded -> {
             val pagerStartIndex = Int.MAX_VALUE / 2
             val startDate = remember { mutableStateOf(LocalDate.now()) }
@@ -89,14 +80,9 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
                 }
             }
         }
-        is ScheduleUiState.Error -> Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(text = "Произошла ошибка при загрузке расписания")
-        }
+        is ScheduleUiState.Error -> ErrorScreen(
+            errorMessage = "Произошла ошибка при загрузке расписания",
+            onRefresh = { scheduleViewModel.updateSchedule() })
     }
 }
 
