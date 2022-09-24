@@ -10,14 +10,12 @@ object RUTScheduleDestinations {
 
 class RUTScheduleNavigationActions(navController: NavHostController) {
     val navigateToGroups: () -> Unit = {
-        navController.navigate(RUTScheduleDestinations.GROUPS_ROUTE) {
-            launchSingleTop = true
-        }
+        navController.navigate(RUTScheduleDestinations.GROUPS_ROUTE)
     }
 
     val navigateToSchedule: (groupId: Int) -> Unit = {
         navController.navigate("${RUTScheduleDestinations.SCHEDULE_ROUTE}/${it}") {
-            launchSingleTop = true
+            popUpTo(0)
         }
     }
 }
