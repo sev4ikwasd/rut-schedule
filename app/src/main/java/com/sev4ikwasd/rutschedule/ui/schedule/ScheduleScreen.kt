@@ -1,7 +1,5 @@
 package com.sev4ikwasd.rutschedule.ui.schedule
 
-import android.app.DatePickerDialog
-import android.widget.DatePicker
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,7 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
@@ -26,6 +24,10 @@ import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.sev4ikwasd.rutschedule.model.Class
 import com.sev4ikwasd.rutschedule.ui.composable.ErrorScreen
 import com.sev4ikwasd.rutschedule.ui.composable.LoadingScreen
+import com.vanpra.composematerialdialogs.MaterialDialog
+import com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults
+import com.vanpra.composematerialdialogs.datetime.date.datepicker
+import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -91,17 +93,42 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
 fun ScheduleTopAppBar(
     date: LocalDate, onCurrentDateChange: (LocalDate) -> Unit, onNavigateToGroups: () -> Unit
 ) {
-    val datePickerDialog = DatePickerDialog(
-        LocalContext.current, { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
-            onCurrentDateChange(LocalDate.of(year, month + 1, dayOfMonth))
-        }, date.year, date.monthValue - 1, date.dayOfMonth
-    )
+    val dialogState = rememberMaterialDialogState()
+    MaterialDialog(
+        dialogState = dialogState,
+        buttons = {
+            positiveButton(
+                "Ok",
+                textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.primary)
+            )
+            negativeButton(
+                "Cancel",
+                textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.primary)
+            )
+        },
+        backgroundColor = MaterialTheme.colorScheme.background
+    ) {
+        datepicker(
+            title = "ВЫБЕРИТЕ ДАТУ",
+            colors = DatePickerDefaults.colors(
+                headerBackgroundColor = MaterialTheme.colorScheme.primary,
+                headerTextColor = MaterialTheme.colorScheme.onPrimary,
+                calendarHeaderTextColor = MaterialTheme.colorScheme.onBackground,
+                dateActiveBackgroundColor = MaterialTheme.colorScheme.primary,
+                dateInactiveBackgroundColor = MaterialTheme.colorScheme.background,
+                dateActiveTextColor = MaterialTheme.colorScheme.onPrimary,
+                dateInactiveTextColor = MaterialTheme.colorScheme.onBackground
+            )
+        ) {
+            onCurrentDateChange(it)
+        }
+    }
 
     var displayMenu by remember { mutableStateOf(false) }
 
     CenterAlignedTopAppBar(title = {
         Button(onClick = {
-            datePickerDialog.show()
+            dialogState.show()
         }) {
             val formattedDate = date.format(DateTimeFormatter.ofPattern("E, d LLL y"))
             Text(text = formattedDate)
