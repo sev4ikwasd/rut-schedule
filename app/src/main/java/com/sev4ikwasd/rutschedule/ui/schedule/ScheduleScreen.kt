@@ -110,6 +110,7 @@ fun ScheduleTopAppBar(
         shape = MaterialTheme.shapes.large
     ) {
         datepicker(
+            initialDate = date,
             title = "ВЫБЕРИТЕ ДАТУ",
             colors = DatePickerDefaults.colors(
                 headerBackgroundColor = MaterialTheme.colorScheme.primary,
