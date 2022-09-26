@@ -98,11 +98,11 @@ fun ScheduleTopAppBar(
         dialogState = dialogState,
         buttons = {
             positiveButton(
-                "Ok",
+                "Ок",
                 textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.primary)
             )
             negativeButton(
-                "Cancel",
+                "Отмена",
                 textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.primary)
             )
         },
