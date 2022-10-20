@@ -3,8 +3,6 @@ package com.sev4ikwasd.rutschedule.ui.schedule
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +26,7 @@ import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
+import com.vanpra.composematerialdialogs.title
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -55,7 +54,7 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
                         val page = pagerStartIndex - daysBetween
                         pagerState.animateScrollToPage(page)
                     }
-                }, onNavigateToGroups = onNavigateToGroups)
+                }, group = state.schedule.group, onNavigateToGroups = onNavigateToGroups)
             }) { padding ->
                 Box(
                     modifier = Modifier
@@ -91,11 +90,14 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleTopAppBar(
-    date: LocalDate, onCurrentDateChange: (LocalDate) -> Unit, onNavigateToGroups: () -> Unit
+    date: LocalDate,
+    onCurrentDateChange: (LocalDate) -> Unit,
+    group: String,
+    onNavigateToGroups: () -> Unit
 ) {
-    val dialogState = rememberMaterialDialogState()
+    val datePickerDialogState = rememberMaterialDialogState()
     MaterialDialog(
-        dialogState = dialogState,
+        dialogState = datePickerDialogState,
         buttons = {
             positiveButton(
                 "Ок",
@@ -126,26 +128,38 @@ fun ScheduleTopAppBar(
         }
     }
 
-    var displayMenu by remember { mutableStateOf(false) }
+    val changeGroupDialogState = rememberMaterialDialogState()
+    MaterialDialog(
+        dialogState = changeGroupDialogState,
+        buttons = {
+            positiveButton(
+                text = "Да",
+                textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.primary)
+            ) { onNavigateToGroups() }
+            negativeButton(
+                text = "Нет",
+                textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.primary)
+            )
+        },
+        backgroundColor = MaterialTheme.colorScheme.background,
+        shape = MaterialTheme.shapes.large
+    ) {
+        title(
+            text = "Сменить группу?",
+            color = MaterialTheme.colorScheme.onBackground
+        )
+    }
 
     CenterAlignedTopAppBar(title = {
         Button(onClick = {
-            dialogState.show()
+            datePickerDialogState.show()
         }) {
             val formattedDate = date.format(DateTimeFormatter.ofPattern("E, d LLL y"))
             Text(text = formattedDate)
         }
-    }, actions = {
-        IconButton(onClick = { displayMenu = !displayMenu }) {
-            Icon(Icons.Default.MoreVert, "")
-        }
-        DropdownMenu(
-            expanded = displayMenu,
-            onDismissRequest = { displayMenu = false }
-        ) {
-            DropdownMenuItem(onClick = onNavigateToGroups, text = {
-                Text(text = "Сменить группу")
-            })
+    }, navigationIcon = {
+        TextButton(onClick = { changeGroupDialogState.show() }) {
+            Text(text = group)
         }
     })
 }
