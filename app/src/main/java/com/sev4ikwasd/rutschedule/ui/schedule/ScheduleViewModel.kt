@@ -13,7 +13,12 @@ import kotlinx.coroutines.launch
 
 sealed interface ScheduleUiState {
     object Loading : ScheduleUiState
-    data class Loaded(val isRefreshing: Boolean, val isCacheUsed: Boolean, val schedule: Schedule) :
+    data class Loaded(
+        val isRefreshing: Boolean,
+        val isRefreshHidden: Boolean,
+        val isCacheUsed: Boolean,
+        val schedule: Schedule
+    ) :
         ScheduleUiState
 
     object Error : ScheduleUiState
@@ -27,17 +32,15 @@ class ScheduleViewModel(
     val uiState: StateFlow<ScheduleUiState> = _uiState
 
     init {
-        updateSchedule()
+        loadSchedule()
     }
 
-    fun updateSchedule() {
+    private fun loadSchedule() {
         viewModelScope.launch {
-            if (_uiState.value is ScheduleUiState.Loaded) {
-                _uiState.update { (it as ScheduleUiState.Loaded).copy(isRefreshing = true) }
-            }
             when (val schedule = scheduleRepository.loadSchedule(groupId)) {
                 is Result.Success -> _uiState.value = ScheduleUiState.Loaded(
                     isRefreshing = true,
+                    isRefreshHidden = true,
                     isCacheUsed = false,
                     schedule = schedule.data
                 )
@@ -46,17 +49,48 @@ class ScheduleViewModel(
             when (val schedule = scheduleRepository.updateSchedule(groupId)) {
                 is Result.Success -> _uiState.value = ScheduleUiState.Loaded(
                     isRefreshing = false,
+                    isRefreshHidden = false,
                     isCacheUsed = false,
                     schedule = schedule.data
                 )
                 is Result.Error -> if (_uiState.value is ScheduleUiState.Loaded) _uiState.value =
                     ScheduleUiState.Loaded(
                         isRefreshing = false,
+                        isRefreshHidden = false,
                         isCacheUsed = true,
                         schedule = (_uiState.value as ScheduleUiState.Loaded).schedule
                     )
                 else {
                     _uiState.value = ScheduleUiState.Error
+                }
+            }
+        }
+    }
+
+    fun updateSchedule() {
+        if (_uiState.value is ScheduleUiState.Loaded) {
+            _uiState.update {
+                (it as ScheduleUiState.Loaded).copy(
+                    isRefreshHidden = false
+                )
+            }
+            if (!(_uiState.value as ScheduleUiState.Loaded).isRefreshing) {
+                viewModelScope.launch {
+                    when (val schedule = scheduleRepository.updateSchedule(groupId)) {
+                        is Result.Success -> _uiState.value = ScheduleUiState.Loaded(
+                            isRefreshing = false,
+                            isRefreshHidden = false,
+                            isCacheUsed = false,
+                            schedule = schedule.data
+                        )
+                        is Result.Error -> if (_uiState.value is ScheduleUiState.Loaded) _uiState.value =
+                            ScheduleUiState.Loaded(
+                                isRefreshing = false,
+                                isRefreshHidden = false,
+                                isCacheUsed = true,
+                                schedule = (_uiState.value as ScheduleUiState.Loaded).schedule
+                            )
+                    }
                 }
             }
         }

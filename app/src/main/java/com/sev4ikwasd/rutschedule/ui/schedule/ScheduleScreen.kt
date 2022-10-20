@@ -70,7 +70,7 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
                         }
                     }
                     PagedDayClasses(
-                        isRefreshing = state.isRefreshing,
+                        isRefreshing = state.isRefreshing && !state.isRefreshHidden,
                         onRefresh = { scheduleViewModel.updateSchedule() },
                         classes = state.schedule.classes,
                         dateFrom = state.schedule.dateFrom,
