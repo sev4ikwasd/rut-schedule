@@ -1,7 +1,7 @@
 package com.sev4ikwasd.rutschedule.data.entity
 
 import androidx.room.*
-import androidx.room.ForeignKey.CASCADE
+import androidx.room.ForeignKey.Companion.CASCADE
 import com.sev4ikwasd.rutschedule.model.Class
 import com.sev4ikwasd.rutschedule.model.Schedule
 import java.time.DayOfWeek
