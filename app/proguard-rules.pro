@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-dontwarn javax.annotation.Nonnull
+-dontwarn javax.annotation.Nullable
+-dontwarn javax.annotation.ParametersAreNonnullByDefault
+-dontwarn javax.annotation.WillClose
+-dontwarn javax.annotation.meta.TypeQualifierDefault
