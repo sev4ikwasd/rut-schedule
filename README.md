@@ -1,8 +1,6 @@
 # RUT Schedule
 
 <img alt="Logo" src="app/src/main/ic_launcher-playstore.png" width="120"/>
-<br/>
-<br/>
 <a href="https://apps.rustore.ru/app/com.sev4ikwasd.rutschedule">
 <img alt="Rustore badge" src="readme/rustoreBadge.png" width="150"/>
 </a>
