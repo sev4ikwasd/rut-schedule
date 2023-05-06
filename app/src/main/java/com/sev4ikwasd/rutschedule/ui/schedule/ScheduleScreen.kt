@@ -23,6 +23,7 @@ import com.sev4ikwasd.rutschedule.model.Class
 import com.sev4ikwasd.rutschedule.ui.composable.ErrorScreen
 import com.sev4ikwasd.rutschedule.ui.composable.LoadingScreen
 import com.vanpra.composematerialdialogs.MaterialDialog
+import com.vanpra.composematerialdialogs.MaterialDialogState
 import com.vanpra.composematerialdialogs.datetime.date.DatePickerDefaults
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
@@ -48,13 +49,20 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
             Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }, topBar = {
                 val pagerCurrentDate =
                     startDate.value.plusDays((pagerState.currentPage - pagerStartIndex).toLong())
-                ScheduleTopAppBar(date = pagerCurrentDate, onCurrentDateChange = {
-                    scope.launch {
-                        val daysBetween = (ChronoUnit.DAYS.between(it, startDate.value)).toInt()
-                        val page = pagerStartIndex - daysBetween
-                        pagerState.animateScrollToPage(page)
-                    }
-                }, group = state.schedule.group, onNavigateToGroups = onNavigateToGroups)
+                val changeGroupDialogState = rememberMaterialDialogState()
+                ChangeGroupDialog(
+                    state = changeGroupDialogState, onNavigateToGroups = onNavigateToGroups
+                )
+                ScheduleTopAppBar(date = pagerCurrentDate,
+                    onCurrentDateChange = {
+                        scope.launch {
+                            val daysBetween = (ChronoUnit.DAYS.between(it, startDate.value)).toInt()
+                            val page = pagerStartIndex - daysBetween
+                            pagerState.animateScrollToPage(page)
+                        }
+                    },
+                    group = state.schedule.group,
+                    onNavigateToGroups = { changeGroupDialogState.show() })
             }) { padding ->
                 Box(
                     modifier = Modifier
@@ -81,9 +89,36 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
                 }
             }
         }
+
         is ScheduleUiState.Error -> ErrorScreen(
             errorMessage = "Произошла ошибка при загрузке расписания",
-            onRefresh = { scheduleViewModel.updateSchedule() })
+            onRefresh = { scheduleViewModel.updateSchedule() },
+            showNavigateBack = true,
+            onNavigateBack = onNavigateToGroups
+        )
+    }
+}
+
+@Composable
+fun ChangeGroupDialog(state: MaterialDialogState, onNavigateToGroups: () -> Unit) {
+    MaterialDialog(
+        dialogState = state,
+        buttons = {
+            positiveButton(
+                text = "Да",
+                textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.primary)
+            ) { onNavigateToGroups() }
+            negativeButton(
+                text = "Нет",
+                textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.primary)
+            )
+        },
+        backgroundColor = MaterialTheme.colorScheme.background,
+        shape = MaterialTheme.shapes.large
+    ) {
+        title(
+            text = "Сменить группу?", color = MaterialTheme.colorScheme.onBackground
+        )
     }
 }
 
@@ -100,8 +135,7 @@ fun ScheduleTopAppBar(
         dialogState = datePickerDialogState,
         buttons = {
             positiveButton(
-                "Ок",
-                textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.primary)
+                "Ок", textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.primary)
             )
             negativeButton(
                 "Отмена",
@@ -112,9 +146,7 @@ fun ScheduleTopAppBar(
         shape = MaterialTheme.shapes.large
     ) {
         datepicker(
-            initialDate = date,
-            title = "ВЫБЕРИТЕ ДАТУ",
-            colors = DatePickerDefaults.colors(
+            initialDate = date, title = "ВЫБЕРИТЕ ДАТУ", colors = DatePickerDefaults.colors(
                 headerBackgroundColor = MaterialTheme.colorScheme.primary,
                 headerTextColor = MaterialTheme.colorScheme.onPrimary,
                 calendarHeaderTextColor = MaterialTheme.colorScheme.onBackground,
@@ -128,27 +160,6 @@ fun ScheduleTopAppBar(
         }
     }
 
-    val changeGroupDialogState = rememberMaterialDialogState()
-    MaterialDialog(
-        dialogState = changeGroupDialogState,
-        buttons = {
-            positiveButton(
-                text = "Да",
-                textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.primary)
-            ) { onNavigateToGroups() }
-            negativeButton(
-                text = "Нет",
-                textStyle = TextStyle.Default.copy(color = MaterialTheme.colorScheme.primary)
-            )
-        },
-        backgroundColor = MaterialTheme.colorScheme.background,
-        shape = MaterialTheme.shapes.large
-    ) {
-        title(
-            text = "Сменить группу?",
-            color = MaterialTheme.colorScheme.onBackground
-        )
-    }
 
     CenterAlignedTopAppBar(title = {
         Button(onClick = {
@@ -158,7 +169,7 @@ fun ScheduleTopAppBar(
             Text(text = formattedDate)
         }
     }, navigationIcon = {
-        TextButton(onClick = { changeGroupDialogState.show() }) {
+        TextButton(onClick = onNavigateToGroups) {
             Text(text = group)
         }
     })
