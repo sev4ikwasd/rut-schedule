@@ -5,24 +5,23 @@ import com.sev4ikwasd.rutschedule.data.Result.Error
 import com.sev4ikwasd.rutschedule.data.Result.Success
 import com.sev4ikwasd.rutschedule.data.datasource.local.LocalScheduleDataSource
 import com.sev4ikwasd.rutschedule.data.datasource.local.dao.ScheduleDao
-import com.sev4ikwasd.rutschedule.data.entity.fromDomain
 import com.sev4ikwasd.rutschedule.data.entity.toDomain
-import com.sev4ikwasd.rutschedule.model.Schedule
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.sev4ikwasd.rutschedule.data.entity.toEntity
+import com.sev4ikwasd.rutschedule.model.GroupSchedules
 
 class DatabaseScheduleDataSource internal constructor(
     private val scheduleDao: ScheduleDao
 ) : LocalScheduleDataSource {
-    override suspend fun getSchedule(id: Int): Result<Schedule> = withContext(Dispatchers.IO) {
-        try {
-            Success(scheduleDao.getScheduleWithClasses(id).toDomain())
+
+    override suspend fun getSchedules(id: Int): Result<GroupSchedules> {
+        return try {
+            Success(scheduleDao.getGroupSchedulesWithSchedules(id).toDomain())
         } catch (e: Exception) {
             Error(e)
         }
     }
 
-    override suspend fun changeSchedule(schedule: Schedule) = withContext(Dispatchers.IO) {
-        scheduleDao.changeScheduleWithClasses(schedule.fromDomain())
+    override suspend fun changeSchedules(schedules: GroupSchedules) {
+        scheduleDao.changeGroupSchedulesWithSchedules(schedules.toEntity())
     }
 }

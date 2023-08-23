@@ -1,11 +1,11 @@
 package com.sev4ikwasd.rutschedule.data.repository
 
 import com.sev4ikwasd.rutschedule.data.Result
-import com.sev4ikwasd.rutschedule.model.Group
-import com.sev4ikwasd.rutschedule.model.Schedule
+import com.sev4ikwasd.rutschedule.model.GroupSchedules
+import com.sev4ikwasd.rutschedule.model.Institute
 
 interface ScheduleRepository {
-    suspend fun getAllGroups(): Result<List<Group>>
-    suspend fun loadSchedule(id: Int): Result<Schedule>
-    suspend fun updateSchedule(id: Int): Result<Schedule>
+    suspend fun getAllInstitutes(): Result<List<Institute>>
+    suspend fun loadSchedules(id: Int): Result<GroupSchedules>
+    suspend fun updateSchedules(id: Int): Result<GroupSchedules>
 }

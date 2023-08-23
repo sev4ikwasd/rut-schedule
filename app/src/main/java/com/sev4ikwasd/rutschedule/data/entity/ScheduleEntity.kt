@@ -1,88 +1,282 @@
 package com.sev4ikwasd.rutschedule.data.entity
 
-import androidx.room.*
+import androidx.room.ColumnInfo
+import androidx.room.Embedded
+import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.ForeignKey.Companion.CASCADE
-import com.sev4ikwasd.rutschedule.model.Class
-import com.sev4ikwasd.rutschedule.model.Schedule
-import java.time.DayOfWeek
+import androidx.room.Ignore
+import androidx.room.PrimaryKey
+import androidx.room.Relation
+import com.sev4ikwasd.rutschedule.model.Frequency
+import com.sev4ikwasd.rutschedule.model.FrequencyRule
+import com.sev4ikwasd.rutschedule.model.GroupSchedule
+import com.sev4ikwasd.rutschedule.model.GroupSchedules
+import com.sev4ikwasd.rutschedule.model.NonPeriodicContent
+import com.sev4ikwasd.rutschedule.model.NonPeriodicEvent
+import com.sev4ikwasd.rutschedule.model.PeriodicContent
+import com.sev4ikwasd.rutschedule.model.PeriodicEvent
+import com.sev4ikwasd.rutschedule.model.Timetable
+import com.sev4ikwasd.rutschedule.model.TimetableType
 import java.time.LocalDate
-import java.time.LocalTime
+import java.time.LocalDateTime
 
-@Entity(indices = [Index(value = ["groupId"], unique = true)])
-data class ScheduleEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val groupId: Int,
-    val group: String,
-    val dateFrom: LocalDate,
-    val dateTo: LocalDate
+@Entity
+data class GroupSchedulesEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long,
+    val apiId: Int,
+    val groupName: String,
+)
+
+data class GroupSchedulesWithSchedulesEntity(
+    @Embedded val groupSchedulesEntity: GroupSchedulesEntity, @Relation(
+        parentColumn = "id", entityColumn = "groupSchedulesId", entity = GroupScheduleEntity::class
+    ) val schedules: List<GroupScheduleWithEmbeddingsEntity>
+)
+
+fun GroupSchedulesWithSchedulesEntity.toDomain(): GroupSchedules {
+    return GroupSchedules(
+        groupSchedulesEntity.apiId,
+        groupSchedulesEntity.groupName,
+        schedules.map(GroupScheduleWithEmbeddingsEntity::toDomain)
+    )
+}
+
+fun GroupSchedules.toEntity(): GroupSchedulesWithSchedulesEntity {
+    return GroupSchedulesWithSchedulesEntity(
+        GroupSchedulesEntity(0, id, groupName), schedules.map(GroupSchedule::toEntity)
+    )
+}
+
+@Entity(
+    foreignKeys = [ForeignKey(
+        entity = GroupSchedulesEntity::class,
+        parentColumns = ["id"],
+        childColumns = ["groupSchedulesId"],
+        onDelete = CASCADE
+    ), ForeignKey(
+        entity = TimetableEntity::class,
+        parentColumns = ["id"],
+        childColumns = ["timetableId"],
+        onDelete = CASCADE
+    ), ForeignKey(
+        entity = PeriodicContentEntity::class,
+        parentColumns = ["id"],
+        childColumns = ["periodicContentId"],
+        onDelete = CASCADE
+    ), ForeignKey(
+        entity = NonPeriodicContentEntity::class,
+        parentColumns = ["id"],
+        childColumns = ["nonPeriodicContentId"],
+        onDelete = CASCADE
+    )]
+)
+data class GroupScheduleEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long,
+    @ColumnInfo(index = true) var groupSchedulesId: Long,
+    @ColumnInfo(index = true) var timetableId: Long,
+    @ColumnInfo(index = true) var periodicContentId: Long?,
+    @ColumnInfo(index = true) var nonPeriodicContentId: Long?
+)
+
+data class GroupScheduleWithEmbeddingsEntity(
+    @Embedded val groupScheduleEntity: GroupScheduleEntity,
+    @Relation(
+        parentColumn = "timetableId", entityColumn = "id"
+    ) val timetableEntity: TimetableEntity, @Relation(
+        parentColumn = "periodicContentId",
+        entityColumn = "id",
+        entity = PeriodicContentEntity::class
+    ) val periodicContentEntity: PeriodicContentWithEventsEntity?, @Relation(
+        parentColumn = "nonPeriodicContentId",
+        entityColumn = "id",
+        entity = NonPeriodicContentEntity::class
+    ) val nonPeriodicContentEntity: NonPeriodicContentWithEventsEntity?
+)
+
+fun GroupScheduleWithEmbeddingsEntity.toDomain(): GroupSchedule {
+    return GroupSchedule(
+        timetableEntity.toDomain(),
+        periodicContentEntity?.toDomain(),
+        nonPeriodicContentEntity?.toDomain()
+    )
+}
+
+fun GroupSchedule.toEntity(): GroupScheduleWithEmbeddingsEntity {
+    return GroupScheduleWithEmbeddingsEntity(
+        GroupScheduleEntity(0, 0, 0, null, null),
+        timetable.toEntity(),
+        periodicContent?.toEntity(),
+        nonPeriodicContent?.toEntity()
+    )
+}
+
+@Entity
+data class TimetableEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long,
+    val apiId: String,
+    val type: TimetableType,
+    val typeName: String,
+    val startDate: LocalDate,
+    val endDate: LocalDate
+)
+
+fun TimetableEntity.toDomain(): Timetable {
+    return Timetable(apiId, type, typeName, startDate, endDate)
+}
+
+fun Timetable.toEntity(): TimetableEntity {
+    return TimetableEntity(0, id, type, typeName, startDate, endDate)
+}
+
+data class FrequencyRuleEntity(
+    val frequency: Frequency, val interval: Int
+)
+
+fun FrequencyRuleEntity.toDomain(): FrequencyRule {
+    return FrequencyRule(frequency, interval)
+}
+
+fun FrequencyRule.toEntity(): FrequencyRuleEntity {
+    return FrequencyRuleEntity(frequency, interval)
+}
+
+@Entity
+data class PeriodicContentEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long, @Embedded val recurrence: FrequencyRuleEntity
+)
+
+data class PeriodicContentWithEventsEntity(
+    @Embedded val periodicContentEntity: PeriodicContentEntity, @Relation(
+        parentColumn = "id", entityColumn = "periodicContentId"
+    ) val events: List<PeriodicEventEntity>
+)
+
+fun PeriodicContentWithEventsEntity.toDomain(): PeriodicContent {
+    return PeriodicContent(
+        events.map(PeriodicEventEntity::toDomain), periodicContentEntity.recurrence.toDomain()
+    )
+}
+
+fun PeriodicContent.toEntity(): PeriodicContentWithEventsEntity {
+    return PeriodicContentWithEventsEntity(
+        PeriodicContentEntity(0, recurrence.toEntity()), events.map(PeriodicEvent::toEntity)
+    )
+}
+
+@Entity
+data class NonPeriodicContentEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long
+)
+
+data class NonPeriodicContentWithEventsEntity(
+    @Embedded val nonPeriodicContentEntity: NonPeriodicContentEntity, @Relation(
+        parentColumn = "id", entityColumn = "nonPeriodicContentId"
+    ) val events: List<NonPeriodicEventEntity>
+)
+
+fun NonPeriodicContentWithEventsEntity.toDomain(): NonPeriodicContent {
+    return NonPeriodicContent(events.map(NonPeriodicEventEntity::toDomain))
+}
+
+fun NonPeriodicContent.toEntity(): NonPeriodicContentWithEventsEntity {
+    return NonPeriodicContentWithEventsEntity(
+        NonPeriodicContentEntity(0), events.map(NonPeriodicEvent::toEntity)
+    )
+}
+
+open class EventEntity(
+    @Ignore open val id: Long,
+    @Ignore open val name: String,
+    @Ignore open val typeName: String,
+    @Ignore open val startDatetime: LocalDateTime,
+    @Ignore open val endDatetime: LocalDateTime,
+    @Ignore open val lecturers: List<String>,
+    @Ignore open val rooms: List<String>,
+    @Ignore open val groups: List<String>
 )
 
 @Entity(
     foreignKeys = [ForeignKey(
-        entity = ScheduleEntity::class,
+        entity = PeriodicContentEntity::class,
         parentColumns = ["id"],
-        childColumns = ["scheduleId"],
+        childColumns = ["periodicContentId"],
         onDelete = CASCADE
     )]
 )
-data class ClassEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    @ColumnInfo(index = true)
-    var scheduleId: Long = 0,
-    val type: String,
-    val name: String,
-    val teachers: List<String>,
-    val classrooms: List<String>,
-    val week: Int,
-    val dayOfWeek: DayOfWeek,
-    val classNumber: Int,
-    val timeFrom: LocalTime,
-    val timeTo: LocalTime
+data class PeriodicEventEntity(
+    @PrimaryKey(autoGenerate = true) override val id: Long,
+    override val name: String,
+    override val typeName: String,
+    override val startDatetime: LocalDateTime,
+    override val endDatetime: LocalDateTime,
+    override val lecturers: List<String>,
+    override val rooms: List<String>,
+    override val groups: List<String>,
+    @ColumnInfo(index = true) var periodicContentId: Long,
+    val timeSlotName: String,
+    val periodNumber: Int,
+    @Embedded val recurrenceRule: FrequencyRuleEntity
+) : EventEntity(id, name, typeName, startDatetime, endDatetime, lecturers, rooms, groups)
+
+fun PeriodicEventEntity.toDomain(): PeriodicEvent {
+    return PeriodicEvent(
+        name,
+        typeName,
+        lecturers,
+        rooms,
+        groups,
+        startDatetime,
+        endDatetime,
+        timeSlotName,
+        periodNumber,
+        recurrenceRule.toDomain()
+    )
+}
+
+fun PeriodicEvent.toEntity(): PeriodicEventEntity {
+    return PeriodicEventEntity(
+        0,
+        name,
+        typeName,
+        startDatetime,
+        endDatetime,
+        lecturers,
+        rooms,
+        groups,
+        0,
+        timeSlotName,
+        periodNumber,
+        recurrenceRule.toEntity()
+    )
+}
+
+@Entity(
+    foreignKeys = [ForeignKey(
+        entity = NonPeriodicContentEntity::class,
+        parentColumns = ["id"],
+        childColumns = ["nonPeriodicContentId"],
+        onDelete = CASCADE
+    )]
 )
+data class NonPeriodicEventEntity(
+    @PrimaryKey(autoGenerate = true) override val id: Long,
+    override val name: String,
+    override val typeName: String,
+    override val startDatetime: LocalDateTime,
+    override val endDatetime: LocalDateTime,
+    override val lecturers: List<String>,
+    override val rooms: List<String>,
+    override val groups: List<String>,
+    @ColumnInfo(index = true) var nonPeriodicContentId: Long,
+) : EventEntity(id, name, typeName, startDatetime, endDatetime, lecturers, rooms, groups)
 
-data class ScheduleWithClassesEntity(
-    @Embedded
-    val schedule: ScheduleEntity,
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "scheduleId"
-    )
-    val classes: List<ClassEntity>
-)
-
-fun ClassEntity.toDomain(): Class {
-    return Class(type, name, teachers, classrooms, week, dayOfWeek, classNumber, timeFrom, timeTo)
+fun NonPeriodicEventEntity.toDomain(): NonPeriodicEvent {
+    return NonPeriodicEvent(name, typeName, lecturers, rooms, groups, startDatetime, endDatetime)
 }
 
-fun Class.fromDomain(): ClassEntity {
-    return ClassEntity(
-        type = type,
-        name = name,
-        teachers = teachers,
-        classrooms = classrooms,
-        week = week,
-        dayOfWeek = dayOfWeek,
-        classNumber = classNumber,
-        timeFrom = timeFrom,
-        timeTo = timeTo
-    )
-}
-
-fun ScheduleWithClassesEntity.toDomain(): Schedule {
-    return Schedule(
-        schedule.groupId,
-        schedule.group,
-        classes.map(ClassEntity::toDomain),
-        schedule.dateFrom,
-        schedule.dateTo
-    )
-}
-
-fun Schedule.fromDomain(): ScheduleWithClassesEntity {
-    return ScheduleWithClassesEntity(
-        ScheduleEntity(groupId = groupId, group = group, dateFrom = dateFrom, dateTo = dateTo),
-        classes.map(Class::fromDomain)
+fun NonPeriodicEvent.toEntity(): NonPeriodicEventEntity {
+    return NonPeriodicEventEntity(
+        0, name, typeName, startDatetime, endDatetime, lecturers, rooms, groups, 0
     )
 }

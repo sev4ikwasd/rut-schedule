@@ -6,17 +6,22 @@
 </a>
 
 ## О приложении
+
 Приложение с расписанием для студентов РУТ (МИИТ).
 
 ## Возможности
+
 На текущий момент приложение позволяет:
+
 - Просматривать группы
 - Просматривать расписание выбранной группы
 - Доступ к расписанию в режиме оффлайн
 
 ## Скриншоты
+
 [<img src="readme/groupsView.png" align="left" width="200" hspace="10" vspace="10">](readme/groupsView.png)
 [<img src="readme/scheduleView.png" align="center" width="200" hspace="10" vspace="10">](readme/scheduleView.png)
 
 ## Лицензия
+
 Приложение распространяется по лицензии MIT (смотрите [LICENSE](LICENSE)).

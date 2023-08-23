@@ -1,8 +1,16 @@
 package com.sev4ikwasd.rutschedule.ui.schedule
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,13 +21,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.HorizontalPager
-import com.google.accompanist.pager.PagerState
-import com.google.accompanist.pager.rememberPagerState
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
-import com.sev4ikwasd.rutschedule.model.Class
+import com.sev4ikwasd.rutschedule.model.Event
+import com.sev4ikwasd.rutschedule.model.Frequency
+import com.sev4ikwasd.rutschedule.model.FrequencyRule
+import com.sev4ikwasd.rutschedule.model.GroupSchedule
+import com.sev4ikwasd.rutschedule.model.GroupSchedules
+import com.sev4ikwasd.rutschedule.model.NonPeriodicEvent
+import com.sev4ikwasd.rutschedule.model.PeriodicEvent
+import com.sev4ikwasd.rutschedule.model.TimetableType
 import com.sev4ikwasd.rutschedule.ui.composable.ErrorScreen
 import com.sev4ikwasd.rutschedule.ui.composable.LoadingScreen
 import com.vanpra.composematerialdialogs.MaterialDialog
@@ -29,40 +38,50 @@ import com.vanpra.composematerialdialogs.datetime.date.datepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 import com.vanpra.composematerialdialogs.title
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalTime
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalPagerApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () -> Unit) {
     when (val state = scheduleViewModel.uiState.collectAsState().value) {
         is ScheduleUiState.Loading -> LoadingScreen()
         is ScheduleUiState.Loaded -> {
             val pagerStartIndex = Int.MAX_VALUE / 2
-            val startDate = remember { mutableStateOf(LocalDate.now()) }
-            val pagerState = rememberPagerState(initialPage = pagerStartIndex)
+            val currentDateTime = remember { mutableStateOf(LocalDateTime.now()) }
+            val pagerState = rememberPagerState(
+                initialPage = pagerStartIndex,
+            ) {
+                Int.MAX_VALUE
+            }
             val scope = rememberCoroutineScope()
             val snackbarHostState = remember { SnackbarHostState() }
             Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }, topBar = {
                 val pagerCurrentDate =
-                    startDate.value.plusDays((pagerState.currentPage - pagerStartIndex).toLong())
+                    currentDateTime.value.toLocalDate()
+                        .plusDays((pagerState.currentPage - pagerStartIndex).toLong())
                 val changeGroupDialogState = rememberMaterialDialogState()
                 ChangeGroupDialog(
                     state = changeGroupDialogState, onNavigateToGroups = onNavigateToGroups
                 )
-                ScheduleTopAppBar(date = pagerCurrentDate,
+                ScheduleTopAppBar(
+                    pagerCurrentDate = pagerCurrentDate,
                     onCurrentDateChange = {
                         scope.launch {
-                            val daysBetween = (ChronoUnit.DAYS.between(it, startDate.value)).toInt()
+                            val daysBetween = (ChronoUnit.DAYS.between(
+                                it,
+                                currentDateTime.value.toLocalDate()
+                            )).toInt()
                             val page = pagerStartIndex - daysBetween
                             pagerState.animateScrollToPage(page)
                         }
                     },
-                    group = state.schedule.group,
-                    onNavigateToGroups = { changeGroupDialogState.show() })
+                    group = state.groupSchedules.groupName,
+                    onNavigateToGroups = { changeGroupDialogState.show() },
+                    groupSchedules = state.groupSchedules
+                )
             }) { padding ->
                 Box(
                     modifier = Modifier
@@ -77,12 +96,11 @@ fun ScheduleScreen(scheduleViewModel: ScheduleViewModel, onNavigateToGroups: () 
                             snackbarHostState.showSnackbar("Расписание может быть неактуальным")
                         }
                     }
-                    PagedDayClasses(
+                    PagedDayEvents(
                         isRefreshing = state.isRefreshing && !state.isRefreshHidden,
                         onRefresh = { scheduleViewModel.updateSchedule() },
-                        classes = state.schedule.classes,
-                        dateFrom = state.schedule.dateFrom,
-                        startDate = startDate.value,
+                        groupSchedules = state.groupSchedules,
+                        currentDateTime = currentDateTime.value,
                         pagerStartIndex = pagerStartIndex,
                         pagerState = pagerState
                     )
@@ -125,10 +143,11 @@ fun ChangeGroupDialog(state: MaterialDialogState, onNavigateToGroups: () -> Unit
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleTopAppBar(
-    date: LocalDate,
+    pagerCurrentDate: LocalDate,
     onCurrentDateChange: (LocalDate) -> Unit,
     group: String,
-    onNavigateToGroups: () -> Unit
+    onNavigateToGroups: () -> Unit,
+    groupSchedules: GroupSchedules
 ) {
     val datePickerDialogState = rememberMaterialDialogState()
     MaterialDialog(
@@ -146,7 +165,9 @@ fun ScheduleTopAppBar(
         shape = MaterialTheme.shapes.large
     ) {
         datepicker(
-            initialDate = date, title = "ВЫБЕРИТЕ ДАТУ", colors = DatePickerDefaults.colors(
+            initialDate = pagerCurrentDate,
+            title = "ВЫБЕРИТЕ ДАТУ",
+            colors = DatePickerDefaults.colors(
                 headerBackgroundColor = MaterialTheme.colorScheme.primary,
                 headerTextColor = MaterialTheme.colorScheme.onPrimary,
                 calendarHeaderTextColor = MaterialTheme.colorScheme.onBackground,
@@ -160,63 +181,151 @@ fun ScheduleTopAppBar(
         }
     }
 
+    var dayInfo = ""
+    var currentSchedule: GroupSchedule? = null
+    for (groupSchedule in groupSchedules.schedules) {
+        if ((pagerCurrentDate.isAfter(groupSchedule.timetable.startDate)
+                    && pagerCurrentDate.isBefore(groupSchedule.timetable.endDate)
+                    || pagerCurrentDate.isEqual(groupSchedule.timetable.startDate)
+                    || pagerCurrentDate.isEqual(groupSchedule.timetable.endDate))
+        ) {
+            currentSchedule = groupSchedule
+        }
+    }
+    if (currentSchedule != null) {
+        when (currentSchedule.timetable.type) {
+            TimetableType.SESSION -> dayInfo = "Сессия"
+            TimetableType.NON_PERIODIC -> dayInfo = "Разовое"
+            TimetableType.PERIODIC -> {
+                if (currentSchedule.periodicContent!!.recurrence.frequency == Frequency.WEEKLY) {
+                    val dateFromWeekBeginning =
+                        currentSchedule.timetable.startDate.minusDays(currentSchedule.timetable.startDate.dayOfWeek.ordinal.toLong())
+                    val week = ((ChronoUnit.WEEKS.between(
+                        dateFromWeekBeginning, pagerCurrentDate
+                    ) % currentSchedule.periodicContent!!.recurrence.interval) + 1).toInt()
+                    dayInfo = "Неделя $week"
+                }
+            }
+        }
+    }
 
     CenterAlignedTopAppBar(title = {
         Button(onClick = {
             datePickerDialogState.show()
         }) {
-            val formattedDate = date.format(DateTimeFormatter.ofPattern("E, d LLL y"))
+            val formattedDate = pagerCurrentDate.format(DateTimeFormatter.ofPattern("E, d LLL y"))
             Text(text = formattedDate)
         }
     }, navigationIcon = {
         TextButton(onClick = onNavigateToGroups) {
             Text(text = group)
         }
+    }, actions = {
+        Text(text = dayInfo, Modifier.padding(end = 8.dp))
     })
 }
 
-@OptIn(ExperimentalPagerApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun PagedDayClasses(
+fun PagedDayEvents(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
-    classes: List<Class>,
-    dateFrom: LocalDate,
-    startDate: LocalDate,
+    groupSchedules: GroupSchedules,
+    currentDateTime: LocalDateTime,
     pagerStartIndex: Int,
     pagerState: PagerState
 ) {
-    SwipeRefresh(
-        state = rememberSwipeRefreshState(isRefreshing = isRefreshing), onRefresh = onRefresh
-    ) {
-        HorizontalPager(count = Int.MAX_VALUE, state = pagerState) { index ->
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isRefreshing,
+        onRefresh = onRefresh
+    )
+    Box(modifier = Modifier.pullRefresh(pullRefreshState)) {
+        HorizontalPager(state = pagerState) { index ->
             val page = index - pagerStartIndex
-            val dateFromWeekBeginning = dateFrom.minusDays(dateFrom.dayOfWeek.ordinal.toLong())
-            val pagerCurrentDate = startDate.plusDays(page.toLong())
-            val week = ((ChronoUnit.WEEKS.between(
-                dateFromWeekBeginning, pagerCurrentDate
-            ) % 2) + 1).toInt()
-            DayClasses(classes = classes, dayOfWeek = pagerCurrentDate.dayOfWeek, week = week)
+            val pagerCurrentDate = currentDateTime.toLocalDate().plusDays(page.toLong())
+            DayEvents(
+                groupSchedules = groupSchedules,
+                pagerCurrentDate = pagerCurrentDate,
+                currentDateTime = currentDateTime
+            )
         }
+        PullRefreshIndicator(isRefreshing, pullRefreshState, Modifier.align(Alignment.TopCenter))
     }
 }
 
 @Composable
-fun DayClasses(
-    classes: List<Class>,
-    dayOfWeek: DayOfWeek,
-    week: Int,
+fun DayEvents(
+    groupSchedules: GroupSchedules,
+    pagerCurrentDate: LocalDate,
+    currentDateTime: LocalDateTime
 ) {
-    val displayedClasses = classes.filter { it.dayOfWeek == dayOfWeek && it.week == week }
+    var currentSchedule: GroupSchedule? = null
+    for (groupSchedule in groupSchedules.schedules) {
+        if ((pagerCurrentDate.isAfter(groupSchedule.timetable.startDate)
+                    && pagerCurrentDate.isBefore(groupSchedule.timetable.endDate)
+                    || pagerCurrentDate.isEqual(groupSchedule.timetable.startDate)
+                    || pagerCurrentDate.isEqual(groupSchedule.timetable.endDate))
+        ) {
+            currentSchedule = groupSchedule
+        }
+    }
+    val displayedEvents = mutableListOf<Event>()
+    if (currentSchedule != null) {
+        if (currentSchedule.nonPeriodicContent != null) {
+            for (event in currentSchedule.nonPeriodicContent!!.events) {
+                if (event.startDatetime.toLocalDate().equals(pagerCurrentDate)) {
+                    displayedEvents.add(event)
+                }
+            }
+        }
+        if (currentSchedule.periodicContent != null) {
+            if (currentSchedule.periodicContent!!.recurrence.frequency == Frequency.WEEKLY) {
+                val dateFromWeekBeginning =
+                    currentSchedule.timetable.startDate.minusDays(currentSchedule.timetable.startDate.dayOfWeek.ordinal.toLong())
+                for (event in currentSchedule.periodicContent!!.events) {
+                    val week = ((ChronoUnit.WEEKS.between(
+                        dateFromWeekBeginning, pagerCurrentDate
+                    ) % event.recurrenceRule.interval) + 1).toInt()
+                    val currentDayOfWeek = pagerCurrentDate.dayOfWeek
+                    if ((currentDayOfWeek == event.startDatetime.dayOfWeek) && (week == event.periodNumber)) {
+                        displayedEvents.add(event)
+                    }
+                }
+            }
+        }
+    }
+
+    displayedEvents.sortBy { event: Event -> event.startDatetime.toLocalTime() }
+    val groupedDisplayedEvents =
+        displayedEvents.groupBy { event: Event -> event.startDatetime }.toList()
+    var nextDisplayedEvents = listOf<Event>()
+
+    if (currentDateTime.toLocalDate().equals(pagerCurrentDate)) {
+        for (groupDisplayedEventsList in groupedDisplayedEvents.asReversed()) {
+            if (currentDateTime.toLocalTime()
+                    .isBefore(groupDisplayedEventsList.second[0].endDatetime.toLocalTime())
+            ) {
+                nextDisplayedEvents = groupDisplayedEventsList.second
+            }
+        }
+    }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        if (displayedClasses.isNotEmpty()) {
-            items(displayedClasses) {
-                ClassCard(it)
+        if (groupedDisplayedEvents.isNotEmpty()) {
+            items(groupedDisplayedEvents) {
+                EventCard(
+                    it.second,
+                    ((nextDisplayedEvents.isNotEmpty()) && (it.second == nextDisplayedEvents))
+                )
+            }
+
+            item {
+                Spacer(modifier = Modifier.padding(0.dp))
             }
         } else {
-            items(1) { // Swipe refresh not working without list
+            item { // Swipe refresh not working without list
                 Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
                     Text(text = "На этот день нет пар", textAlign = TextAlign.Center)
                 }
@@ -226,11 +335,19 @@ fun DayClasses(
 }
 
 @Composable
-fun ClassCard(classData: Class) {
+fun EventCard(eventsData: List<Event>, isNext: Boolean) {
+    var colors = CardDefaults.elevatedCardColors()
+    if (isNext) {
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.tertiary
+        )
+    }
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp)
+            .padding(horizontal = 8.dp),
+        colors = colors
     ) {
         Column(modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp)) {
             Row(
@@ -238,114 +355,176 @@ fun ClassCard(classData: Class) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
+                val commonEventData = eventsData[0]
+                if (commonEventData is PeriodicEvent) {
+                    Text(
+                        text = commonEventData.timeSlotName,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
                 Text(
-                    text = "${classData.classNumber} пара",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "${classData.timeFrom} - ${classData.timeTo}",
+                    text = "${commonEventData.startDatetime.toLocalTime()} - ${commonEventData.endDatetime.toLocalTime()}",
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
             Spacer(modifier = Modifier.padding(2.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                val classTypeAndName = buildAnnotatedString {
-                    withStyle(
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = MaterialTheme.colorScheme.onSurface.copy(
-                                alpha = 0.6f
-                            )
-                        ).toSpanStyle()
-                    ) {
-                        append(text = classData.type)
-                    }
-                    append(text = "  ")
-                    withStyle(style = MaterialTheme.typography.bodyMedium.toSpanStyle()) {
-                        append(text = classData.name)
-                    }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                eventsData.forEach { eventData ->
+                    SingleEvent(eventData, isNext)
                 }
-                Text(text = classTypeAndName)
             }
-            if (classData.classrooms.isNotEmpty()) {
-                Spacer(modifier = Modifier.padding(2.dp))
-                var classroomsString = "Аудитории: "
-                for (classroom in classData.classrooms) {
-                    classroomsString += "$classroom, "
+        }
+    }
+}
+
+@Composable
+fun SingleEvent(eventData: Event, isNext: Boolean) {
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val classTypeAndName = buildAnnotatedString {
+                withStyle(
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = if (isNext) MaterialTheme.colorScheme.tertiary.copy(
+                            alpha = 0.6f
+                        ) else MaterialTheme.colorScheme.onSurface.copy(
+                            alpha = 0.6f
+                        )
+                    ).toSpanStyle()
+                ) {
+                    append(text = eventData.typeName)
                 }
-                classroomsString = classroomsString.substring(0, classroomsString.length - 2)
-                Text(
-                    text = classroomsString, style = MaterialTheme.typography.bodySmall
-                )
-            }
-            if (classData.teachers.isNotEmpty()) {
-                Spacer(modifier = Modifier.padding(2.dp))
-                var teachersString = "Преподаватели: "
-                for (teacher in classData.teachers) {
-                    teachersString += "$teacher, "
+                append(text = "  ")
+                withStyle(style = MaterialTheme.typography.bodyMedium.toSpanStyle()) {
+                    append(text = eventData.name)
                 }
-                teachersString = teachersString.substring(0, teachersString.length - 2)
-                Text(
-                    text = teachersString, style = MaterialTheme.typography.bodySmall
-                )
             }
+            Text(text = classTypeAndName)
+        }
+        if (eventData.rooms.isNotEmpty()) {
+            Spacer(modifier = Modifier.padding(2.dp))
+            var classroomsString = ""
+            for (room in eventData.rooms) {
+                classroomsString += "$room, "
+            }
+            classroomsString = classroomsString.substring(0, classroomsString.length - 2)
+            Text(
+                text = classroomsString, style = MaterialTheme.typography.bodySmall
+            )
+        }
+        if (eventData.lecturers.isNotEmpty()) {
+            Spacer(modifier = Modifier.padding(2.dp))
+            var teachersString = "Преподаватели: "
+            for (lecturer in eventData.lecturers) {
+                teachersString += "$lecturer, "
+            }
+            teachersString = teachersString.substring(0, teachersString.length - 2)
+            Text(
+                text = teachersString, style = MaterialTheme.typography.bodySmall
+            )
+        }
+        if (eventData.groups.isNotEmpty()) {
+            Spacer(modifier = Modifier.padding(2.dp))
+            var teachersString = "Группы: "
+            for (group in eventData.groups) {
+                teachersString += "$group, "
+            }
+            teachersString = teachersString.substring(0, teachersString.length - 2)
+            Text(
+                text = teachersString, style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
 
 @Preview
 @Composable
-fun PreviewDayClasses() {
-    DayClasses(
+fun PreviewPeriodicEventCard() {
+    EventCard(
         listOf(
-            Class(
-                "Лекция",
+            PeriodicEvent(
                 "Математика",
-                listOf("Иванов И.И.", "Андреев А.А."),
-                listOf("420"),
-                1,
-                DayOfWeek.MONDAY,
-                1,
-                LocalTime.of(8, 30),
-                LocalTime.of(10, 0)
-            ), Class(
                 "Лекция",
-                "Математика",
                 listOf("Иванов И.И.", "Андреев А.А."),
-                listOf("420", "530"),
-                1,
-                DayOfWeek.MONDAY,
+                listOf("Аудитория 420"),
+                listOf("гр. ФЫВ-123"),
+                LocalDateTime.of(2022, 1, 8, 16, 30),
+                LocalDateTime.of(2022, 1, 8, 18, 30),
+                "4 пара",
                 2,
-                LocalTime.of(10, 15),
-                LocalTime.of(11, 45)
-            ), Class(
-                "Лекция",
-                "Математика",
-                listOf("Иванов И.И.", "Андреев А.А."),
-                listOf("420"),
-                1,
-                DayOfWeek.MONDAY,
-                3,
-                LocalTime.of(12, 0),
-                LocalTime.of(13, 30)
+                recurrenceRule = FrequencyRule(Frequency.WEEKLY, 2)
             )
-        ), DayOfWeek.MONDAY, 1
+        ), false
     )
 }
 
 @Preview
 @Composable
-fun PreviewClassCard() {
-    ClassCard(
-        Class(
-            "Лекция",
-            "Математика",
-            listOf("Иванов И.И.", "Андреев А.А."),
-            listOf("420"),
-            1,
-            DayOfWeek.MONDAY,
-            1,
-            LocalTime.of(8, 30),
-            LocalTime.of(10, 0)
-        )
+fun PreviewMultiplePeriodicEventCard() {
+    EventCard(
+        listOf(
+            PeriodicEvent(
+                "Математика",
+                "Лекция",
+                listOf("Иванов И.И.", "Андреев А.А."),
+                listOf("Аудитория 420"),
+                listOf("гр. ФЫВ-123"),
+                LocalDateTime.of(2022, 1, 8, 16, 30),
+                LocalDateTime.of(2022, 1, 8, 18, 30),
+                "4 пара",
+                2,
+                recurrenceRule = FrequencyRule(Frequency.WEEKLY, 2)
+            ), PeriodicEvent(
+                "Математика",
+                "Лекция",
+                listOf("Иванов И.И.", "Андреев А.А."),
+                listOf("Аудитория 420"),
+                listOf("гр. ФЫВ-123"),
+                LocalDateTime.of(2022, 1, 8, 16, 30),
+                LocalDateTime.of(2022, 1, 8, 18, 30),
+                "4 пара",
+                2,
+                recurrenceRule = FrequencyRule(Frequency.WEEKLY, 2)
+            )
+        ), false
     )
 }
+
+@Preview
+@Composable
+fun PreviewNextPeriodicEventCard() {
+    EventCard(
+        listOf(
+            PeriodicEvent(
+                "Математика",
+                "Лекция",
+                listOf("Иванов И.И.", "Андреев А.А."),
+                listOf("Аудитория 420"),
+                listOf("гр. ФЫВ-123"),
+                LocalDateTime.of(2022, 1, 8, 16, 30),
+                LocalDateTime.of(2022, 1, 8, 18, 30),
+                "4 пара",
+                2,
+                recurrenceRule = FrequencyRule(Frequency.WEEKLY, 2)
+            )
+        ), true
+    )
+}
+
+@Preview
+@Composable
+fun PreviewNonPeriodicEventCard() {
+    EventCard(
+        listOf(
+            NonPeriodicEvent(
+                "Математика",
+                "Консультация",
+                listOf("Иванов И.И.", "Андреев А.А."),
+                listOf("Аудитория 420"),
+                listOf("гр. ФЫВ-123"),
+                LocalDateTime.of(2022, 1, 8, 16, 30),
+                LocalDateTime.of(2022, 1, 8, 18, 30),
+            )
+        ), false
+    )
+}
+

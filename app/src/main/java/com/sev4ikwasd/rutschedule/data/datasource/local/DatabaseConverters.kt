@@ -2,7 +2,7 @@ package com.sev4ikwasd.rutschedule.data.datasource.local
 
 import androidx.room.TypeConverter
 import java.time.LocalDate
-import java.time.LocalTime
+import java.time.LocalDateTime
 
 class DatabaseConverters {
     @TypeConverter
@@ -16,13 +16,13 @@ class DatabaseConverters {
     }
 
     @TypeConverter
-    fun secondsToDate(value: Int?): LocalTime? {
-        return value?.let { LocalTime.ofSecondOfDay(it.toLong()) }
+    fun timestampToLocalDateTime(value: String?): LocalDateTime? {
+        return value?.let { LocalDateTime.parse(value) }
     }
 
     @TypeConverter
-    fun dateToSeconds(date: LocalTime?): Int? {
-        return date?.toSecondOfDay()
+    fun localDateTimeToTimestamp(date: LocalDateTime?): String? {
+        return date?.toString()
     }
 
     @TypeConverter

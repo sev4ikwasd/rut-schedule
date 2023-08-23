@@ -5,23 +5,23 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.sev4ikwasd.rutschedule.data.Result
 import com.sev4ikwasd.rutschedule.data.repository.ScheduleRepository
-import com.sev4ikwasd.rutschedule.model.Schedule
+import com.sev4ikwasd.rutschedule.model.GroupSchedules
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 sealed interface ScheduleUiState {
-    object Loading : ScheduleUiState
+    data object Loading : ScheduleUiState
     data class Loaded(
         val isRefreshing: Boolean,
         val isRefreshHidden: Boolean,
         val isCacheUsed: Boolean,
-        val schedule: Schedule
+        val groupSchedules: GroupSchedules
     ) :
         ScheduleUiState
 
-    object Error : ScheduleUiState
+    data object Error : ScheduleUiState
 }
 
 class ScheduleViewModel(
@@ -37,28 +37,30 @@ class ScheduleViewModel(
 
     private fun loadSchedule() {
         viewModelScope.launch {
-            when (val schedule = scheduleRepository.loadSchedule(groupId)) {
+            when (val schedules = scheduleRepository.loadSchedules(groupId)) {
                 is Result.Success -> _uiState.value = ScheduleUiState.Loaded(
                     isRefreshing = true,
                     isRefreshHidden = true,
                     isCacheUsed = false,
-                    schedule = schedule.data
+                    groupSchedules = schedules.data
                 )
+
                 is Result.Error -> _uiState.value = ScheduleUiState.Loading
             }
-            when (val schedule = scheduleRepository.updateSchedule(groupId)) {
+            when (val schedules = scheduleRepository.updateSchedules(groupId)) {
                 is Result.Success -> _uiState.value = ScheduleUiState.Loaded(
                     isRefreshing = false,
                     isRefreshHidden = false,
                     isCacheUsed = false,
-                    schedule = schedule.data
+                    groupSchedules = schedules.data
                 )
+
                 is Result.Error -> if (_uiState.value is ScheduleUiState.Loaded) _uiState.value =
                     ScheduleUiState.Loaded(
                         isRefreshing = false,
                         isRefreshHidden = false,
                         isCacheUsed = true,
-                        schedule = (_uiState.value as ScheduleUiState.Loaded).schedule
+                        groupSchedules = (_uiState.value as ScheduleUiState.Loaded).groupSchedules
                     )
                 else {
                     _uiState.value = ScheduleUiState.Error
@@ -76,19 +78,20 @@ class ScheduleViewModel(
             }
             if (!(_uiState.value as ScheduleUiState.Loaded).isRefreshing) {
                 viewModelScope.launch {
-                    when (val schedule = scheduleRepository.updateSchedule(groupId)) {
+                    when (val schedules = scheduleRepository.updateSchedules(groupId)) {
                         is Result.Success -> _uiState.value = ScheduleUiState.Loaded(
                             isRefreshing = false,
                             isRefreshHidden = false,
                             isCacheUsed = false,
-                            schedule = schedule.data
+                            groupSchedules = schedules.data
                         )
+
                         is Result.Error -> if (_uiState.value is ScheduleUiState.Loaded) _uiState.value =
                             ScheduleUiState.Loaded(
                                 isRefreshing = false,
                                 isRefreshHidden = false,
                                 isCacheUsed = true,
-                                schedule = (_uiState.value as ScheduleUiState.Loaded).schedule
+                                groupSchedules = (_uiState.value as ScheduleUiState.Loaded).groupSchedules
                             )
                     }
                 }
