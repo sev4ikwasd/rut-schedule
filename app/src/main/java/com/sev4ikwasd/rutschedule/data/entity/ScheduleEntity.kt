@@ -10,6 +10,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Relation
 import com.sev4ikwasd.rutschedule.model.Frequency
 import com.sev4ikwasd.rutschedule.model.FrequencyRule
+import com.sev4ikwasd.rutschedule.model.FrequencyRuleFull
 import com.sev4ikwasd.rutschedule.model.GroupSchedule
 import com.sev4ikwasd.rutschedule.model.GroupSchedules
 import com.sev4ikwasd.rutschedule.model.NonPeriodicContent
@@ -141,9 +142,23 @@ fun FrequencyRule.toEntity(): FrequencyRuleEntity {
     return FrequencyRuleEntity(frequency, interval)
 }
 
+data class FrequencyRuleFullEntity(
+    val frequency: Frequency,
+    val interval: Int,
+    val firstInterval: Int
+)
+
+fun FrequencyRuleFullEntity.toDomain(): FrequencyRuleFull {
+    return FrequencyRuleFull(frequency, interval, firstInterval)
+}
+
+fun FrequencyRuleFull.toEntity(): FrequencyRuleFullEntity {
+    return FrequencyRuleFullEntity(frequency, interval, firstInterval)
+}
+
 @Entity
 data class PeriodicContentEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long, @Embedded val recurrence: FrequencyRuleEntity
+    @PrimaryKey(autoGenerate = true) val id: Long, @Embedded val recurrence: FrequencyRuleFullEntity
 )
 
 data class PeriodicContentWithEventsEntity(
