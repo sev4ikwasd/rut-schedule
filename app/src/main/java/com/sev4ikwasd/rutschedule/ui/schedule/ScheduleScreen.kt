@@ -306,9 +306,9 @@ fun DayEvents(
                 val dateFromWeekBeginning =
                     currentSchedule.timetable.startDate.minusDays(currentSchedule.timetable.startDate.dayOfWeek.ordinal.toLong())
                 for (event in currentSchedule.periodicContent!!.events) {
-                    val week = ((ChronoUnit.WEEKS.between(
+                    val week = (((ChronoUnit.WEEKS.between(
                         dateFromWeekBeginning, pagerCurrentDate
-                    ) % event.recurrenceRule.interval) + 1).toInt()
+                    ) + currentSchedule.periodicContent!!.recurrence.firstInterval) % event.recurrenceRule.interval) + 1).toInt()
                     val currentDayOfWeek = pagerCurrentDate.dayOfWeek
                     if ((currentDayOfWeek == event.startDatetime.dayOfWeek) && (week == event.periodNumber)) {
                         displayedEvents.add(event)
