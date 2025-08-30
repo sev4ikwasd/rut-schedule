@@ -18,27 +18,27 @@ import com.sev4ikwasd.rutschedule.data.entity.PeriodicEventEntity
 import com.sev4ikwasd.rutschedule.data.entity.TimetableEntity
 
 val MIGRATION_2_3 = object : Migration(2, 3) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("DROP TABLE IF EXISTS GroupSchedulesEntity")
-        database.execSQL("DROP TABLE IF EXISTS GroupScheduleEntity")
-        database.execSQL("DROP TABLE IF EXISTS TimetableEntity")
-        database.execSQL("DROP TABLE IF EXISTS PeriodicContentEntity")
-        database.execSQL("DROP TABLE IF EXISTS NonPeriodicContentEntity")
-        database.execSQL("DROP TABLE IF EXISTS PeriodicEventEntity")
-        database.execSQL("DROP TABLE IF EXISTS NonPeriodicEventEntity")
-        database.execSQL("CREATE TABLE IF NOT EXISTS `GroupSchedulesEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `apiId` INTEGER NOT NULL, `groupName` TEXT NOT NULL)")
-        database.execSQL("CREATE TABLE IF NOT EXISTS `GroupScheduleEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `groupSchedulesId` INTEGER NOT NULL, `timetableId` INTEGER NOT NULL, `periodicContentId` INTEGER, `nonPeriodicContentId` INTEGER, FOREIGN KEY(`groupSchedulesId`) REFERENCES `GroupSchedulesEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`timetableId`) REFERENCES `TimetableEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`periodicContentId`) REFERENCES `PeriodicContentEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`nonPeriodicContentId`) REFERENCES `NonPeriodicContentEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
-        database.execSQL("CREATE INDEX IF NOT EXISTS `index_GroupScheduleEntity_groupSchedulesId` ON `GroupScheduleEntity` (`groupSchedulesId`)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS `index_GroupScheduleEntity_timetableId` ON `GroupScheduleEntity` (`timetableId`)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS `index_GroupScheduleEntity_periodicContentId` ON `GroupScheduleEntity` (`periodicContentId`)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS `index_GroupScheduleEntity_nonPeriodicContentId` ON `GroupScheduleEntity` (`nonPeriodicContentId`)")
-        database.execSQL("CREATE TABLE IF NOT EXISTS `TimetableEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `apiId` TEXT NOT NULL, `type` TEXT NOT NULL, `typeName` TEXT NOT NULL, `startDate` INTEGER NOT NULL, `endDate` INTEGER NOT NULL)")
-        database.execSQL("CREATE TABLE IF NOT EXISTS `PeriodicContentEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `frequency` TEXT NOT NULL, `interval` INTEGER NOT NULL, `firstInterval` INTEGER NOT NULL)")
-        database.execSQL("CREATE TABLE IF NOT EXISTS `NonPeriodicContentEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)")
-        database.execSQL("CREATE TABLE IF NOT EXISTS `PeriodicEventEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `typeName` TEXT NOT NULL, `startDatetime` TEXT NOT NULL, `endDatetime` TEXT NOT NULL, `lecturers` TEXT NOT NULL, `rooms` TEXT NOT NULL, `groups` TEXT NOT NULL, `periodicContentId` INTEGER NOT NULL, `timeSlotName` TEXT NOT NULL, `periodNumber` INTEGER NOT NULL, `frequency` TEXT NOT NULL, `interval` INTEGER NOT NULL, FOREIGN KEY(`periodicContentId`) REFERENCES `PeriodicContentEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
-        database.execSQL("CREATE INDEX IF NOT EXISTS `index_PeriodicEventEntity_periodicContentId` ON `PeriodicEventEntity` (`periodicContentId`)")
-        database.execSQL("CREATE TABLE IF NOT EXISTS `NonPeriodicEventEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `typeName` TEXT NOT NULL, `startDatetime` TEXT NOT NULL, `endDatetime` TEXT NOT NULL, `lecturers` TEXT NOT NULL, `rooms` TEXT NOT NULL, `groups` TEXT NOT NULL, `nonPeriodicContentId` INTEGER NOT NULL, FOREIGN KEY(`nonPeriodicContentId`) REFERENCES `NonPeriodicContentEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
-        database.execSQL("CREATE INDEX IF NOT EXISTS `index_NonPeriodicEventEntity_nonPeriodicContentId` ON `NonPeriodicEventEntity` (`nonPeriodicContentId`)")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE IF EXISTS GroupSchedulesEntity")
+        db.execSQL("DROP TABLE IF EXISTS GroupScheduleEntity")
+        db.execSQL("DROP TABLE IF EXISTS TimetableEntity")
+        db.execSQL("DROP TABLE IF EXISTS PeriodicContentEntity")
+        db.execSQL("DROP TABLE IF EXISTS NonPeriodicContentEntity")
+        db.execSQL("DROP TABLE IF EXISTS PeriodicEventEntity")
+        db.execSQL("DROP TABLE IF EXISTS NonPeriodicEventEntity")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `GroupSchedulesEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `apiId` INTEGER NOT NULL, `groupName` TEXT NOT NULL)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `GroupScheduleEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `groupSchedulesId` INTEGER NOT NULL, `timetableId` INTEGER NOT NULL, `periodicContentId` INTEGER, `nonPeriodicContentId` INTEGER, FOREIGN KEY(`groupSchedulesId`) REFERENCES `GroupSchedulesEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`timetableId`) REFERENCES `TimetableEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`periodicContentId`) REFERENCES `PeriodicContentEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`nonPeriodicContentId`) REFERENCES `NonPeriodicContentEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_GroupScheduleEntity_groupSchedulesId` ON `GroupScheduleEntity` (`groupSchedulesId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_GroupScheduleEntity_timetableId` ON `GroupScheduleEntity` (`timetableId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_GroupScheduleEntity_periodicContentId` ON `GroupScheduleEntity` (`periodicContentId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_GroupScheduleEntity_nonPeriodicContentId` ON `GroupScheduleEntity` (`nonPeriodicContentId`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `TimetableEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `apiId` TEXT NOT NULL, `type` TEXT NOT NULL, `typeName` TEXT NOT NULL, `startDate` INTEGER NOT NULL, `endDate` INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `PeriodicContentEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `frequency` TEXT NOT NULL, `interval` INTEGER NOT NULL, `firstInterval` INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `NonPeriodicContentEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `PeriodicEventEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `typeName` TEXT NOT NULL, `startDatetime` TEXT NOT NULL, `endDatetime` TEXT NOT NULL, `lecturers` TEXT NOT NULL, `rooms` TEXT NOT NULL, `groups` TEXT NOT NULL, `periodicContentId` INTEGER NOT NULL, `timeSlotName` TEXT NOT NULL, `periodNumber` INTEGER NOT NULL, `frequency` TEXT NOT NULL, `interval` INTEGER NOT NULL, FOREIGN KEY(`periodicContentId`) REFERENCES `PeriodicContentEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_PeriodicEventEntity_periodicContentId` ON `PeriodicEventEntity` (`periodicContentId`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `NonPeriodicEventEntity` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `typeName` TEXT NOT NULL, `startDatetime` TEXT NOT NULL, `endDatetime` TEXT NOT NULL, `lecturers` TEXT NOT NULL, `rooms` TEXT NOT NULL, `groups` TEXT NOT NULL, `nonPeriodicContentId` INTEGER NOT NULL, FOREIGN KEY(`nonPeriodicContentId`) REFERENCES `NonPeriodicContentEntity`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_NonPeriodicEventEntity_nonPeriodicContentId` ON `NonPeriodicEventEntity` (`nonPeriodicContentId`)")
     }
 }
 

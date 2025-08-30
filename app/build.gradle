@@ -1,8 +1,17 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
-    id 'org.jetbrains.kotlin.plugin.serialization'
-    id 'com.google.devtools.ksp' version '1.9.0-1.0.13'
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.ksp)
+    alias(libs.plugins.compose.compiler)
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
 }
 
 def keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -12,18 +21,19 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    compileSdk 34
+    namespace = "com.sev4ikwasd.rutschedule"
 
     defaultConfig {
-        applicationId "com.sev4ikwasd.rutschedule"
-        minSdkVersion 26
-        targetSdkVersion 34
-        versionCode 4
-        versionName "2.0.2"
+        applicationId = "com.sev4ikwasd.rutschedule"
+        minSdk = 26
+        compileSdk = 36
+        targetSdk = 36
+        versionCode = 5
+        versionName = "2.0.3"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
-            useSupportLibrary true
+            useSupportLibrary = true
         }
 
         ksp {
@@ -33,76 +43,65 @@ android {
 
     signingConfigs {
         if (keystorePropertiesFile.exists()) {
-            release {
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
-                storeFile file(keystoreProperties['storeFile'])
-                storePassword keystoreProperties['storePassword']
+            register("release") {
+                keyAlias = keystoreProperties["keyAlias"]
+                keyPassword = keystoreProperties["keyPassword"]
+                storeFile = file(keystoreProperties["storeFile"])
+                storePassword = keystoreProperties["storePassword"]
             }
         }
     }
 
     buildTypes {
         debug {
-            applicationIdSuffix ".debug"
+            applicationIdSuffix = ".debug"
         }
         release {
-            minifyEnabled true
-            shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (keystorePropertiesFile.exists()) {
-                signingConfig signingConfigs.release
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-    kotlin {
-        jvmToolchain(17)
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
-        compose true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.1'
+        compose = true
     }
     packagingOptions {
         resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            excludes += ['/META-INF/AL2.0', '/META-INF/LGPL2.1']
         }
     }
-    namespace 'com.sev4ikwasd.rutschedule'
 }
 
 dependencies {
-    implementation 'androidx.core:core-ktx:1.12.0'
-    implementation "androidx.compose.ui:ui:$compose_version"
-    implementation 'androidx.compose.material3:material3:1.1.2'
-    implementation "androidx.compose.material:material:$compose_version"
-    implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
-    implementation 'androidx.activity:activity-compose:1.8.2'
-    implementation "androidx.navigation:navigation-runtime-ktx:$navigation_version"
-    implementation "androidx.navigation:navigation-compose:$navigation_version"
-    implementation "com.google.accompanist:accompanist-swiperefresh:$accompanist_version"
-    implementation "com.google.accompanist:accompanist-pager:$accompanist_version"
-    implementation "com.google.accompanist:accompanist-flowlayout:$accompanist_version"
-    implementation 'com.google.code.findbugs:jsr305:3.0.2'
-    implementation "io.ktor:ktor-client-android:$ktor_version"
-    implementation "io.ktor:ktor-client-content-negotiation:$ktor_version"
-    implementation "io.ktor:ktor-serialization-kotlinx-json:$ktor_version"
-    implementation "androidx.room:room-runtime:$room_version"
-    implementation "androidx.room:room-ktx:$room_version"
-    implementation 'io.github.vanpra.compose-material-dialogs:core:0.8.1-rc'
-    implementation 'io.github.vanpra.compose-material-dialogs:datetime:0.8.1-rc'
-    annotationProcessor "androidx.room:room-compiler:$room_version"
-    ksp "androidx.room:room-compiler:$room_version"
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-    androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
-    debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
-    debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
+    implementation(libs.androidx.core.ktx)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.navigation.runtime.ktx)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.vanpra.compose.material.dialogs.core)
+    implementation(libs.vanpra.compose.material.dialogs.datetime)
+    ksp(libs.androidx.room.compiler)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

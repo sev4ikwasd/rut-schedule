@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -67,7 +67,7 @@ fun ErrorTopAppBar(
     CenterAlignedTopAppBar(title = {}, navigationIcon = {
         if (showNavigateBack) {
             IconButton(onClick = onNavigateBack) {
-                Icon(Icons.Default.ArrowBack, "Вернуться назад")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Вернуться назад")
             }
         }
     })

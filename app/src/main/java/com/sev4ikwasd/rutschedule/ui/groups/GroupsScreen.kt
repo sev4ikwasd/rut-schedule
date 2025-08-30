@@ -1,10 +1,8 @@
 package com.sev4ikwasd.rutschedule.ui.groups
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -99,13 +97,15 @@ fun InstitutesWithSearch(
                     tint = MaterialTheme.colorScheme.outline
                 )
             },
-            keyboardOptions = KeyboardOptions(autoCorrect = false, imeAction = ImeAction.Search)
+            keyboardOptions = KeyboardOptions(
+                autoCorrectEnabled = false,
+                imeAction = ImeAction.Search
+            )
         )
         InstituteList(institutes = institutes, navigateToSchedule = { onNavigateToSchedule(it) })
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun InstituteList(institutes: List<Institute>, navigateToSchedule: (scheduleId: Int) -> Unit) {
     LazyColumn(
@@ -169,97 +169,97 @@ fun InstituteList(institutes: List<Institute>, navigateToSchedule: (scheduleId: 
 fun PreviewGroupsWithSearch() {
     InstitutesWithSearch(
         institutes =
-        listOf(
-            Institute(
-                "Академия \"Высшая инженерная школа\"", "АВИШ", listOf(
-                    Course(
-                        1, listOf(
-                            Specialty(
-                                "Инфокоммуникационные технологии и системы связи",
-                                "ШМС",
-                                listOf(
-                                    Group(185411, "ШМС-111")
+            listOf(
+                Institute(
+                    "Академия \"Высшая инженерная школа\"", "АВИШ", listOf(
+                        Course(
+                            1, listOf(
+                                Specialty(
+                                    "Инфокоммуникационные технологии и системы связи",
+                                    "ШМС",
+                                    listOf(
+                                        Group(185411, "ШМС-111")
+                                    )
+                                ),
+                                Specialty(
+                                    "Информатика и вычислительная техника",
+                                    "ШАД",
+                                    listOf(
+                                        Group(185407, "ШАД-111"),
+                                        Group(185407, "ШАД-111"),
+                                        Group(185407, "ШАД-111"),
+                                        Group(185407, "ШАД-111"),
+                                        Group(185407, "ШАД-111"),
+                                        Group(185407, "ШАД-111"),
+                                        Group(186322, "ШАД-112")
+                                    )
                                 )
-                            ),
-                            Specialty(
-                                "Информатика и вычислительная техника",
-                                "ШАД",
-                                listOf(
-                                    Group(185407, "ШАД-111"),
-                                    Group(185407, "ШАД-111"),
-                                    Group(185407, "ШАД-111"),
-                                    Group(185407, "ШАД-111"),
-                                    Group(185407, "ШАД-111"),
-                                    Group(185407, "ШАД-111"),
-                                    Group(186322, "ШАД-112")
+                            )
+                        ),
+                        Course(
+                            1, listOf(
+                                Specialty(
+                                    "Инфокоммуникационные технологии и системы связи",
+                                    "ШМС",
+                                    listOf(
+                                        Group(185411, "ШМС-111")
+                                    )
+                                ),
+                                Specialty(
+                                    "Информатика и вычислительная техника",
+                                    "ШАД",
+                                    listOf(
+                                        Group(185407, "ШАД-111"),
+                                        Group(186322, "ШАД-112")
+                                    )
                                 )
                             )
                         )
-                    ),
-                    Course(
-                        1, listOf(
-                            Specialty(
-                                "Инфокоммуникационные технологии и системы связи",
-                                "ШМС",
-                                listOf(
-                                    Group(185411, "ШМС-111")
+                    )
+                ),
+                Institute(
+                    "Академия \"Высшая инженерная школа\"", "АВИШ", listOf(
+                        Course(
+                            1, listOf(
+                                Specialty(
+                                    "Инфокоммуникационные технологии и системы связи",
+                                    "ШМС",
+                                    listOf(
+                                        Group(185411, "ШМС-111")
+                                    )
+                                ),
+                                Specialty(
+                                    "Информатика и вычислительная техника",
+                                    "ШАД",
+                                    listOf(
+                                        Group(185407, "ШАД-111"),
+                                        Group(186322, "ШАД-112")
+                                    )
                                 )
-                            ),
-                            Specialty(
-                                "Информатика и вычислительная техника",
-                                "ШАД",
-                                listOf(
-                                    Group(185407, "ШАД-111"),
-                                    Group(186322, "ШАД-112")
+                            )
+                        ),
+                        Course(
+                            1, listOf(
+                                Specialty(
+                                    "Инфокоммуникационные технологии и системы связи",
+                                    "ШМС",
+                                    listOf(
+                                        Group(185411, "ШМС-111")
+                                    )
+                                ),
+                                Specialty(
+                                    "Информатика и вычислительная техника",
+                                    "ШАД",
+                                    listOf(
+                                        Group(185407, "ШАД-111"),
+                                        Group(186322, "ШАД-112")
+                                    )
                                 )
                             )
                         )
                     )
                 )
             ),
-            Institute(
-                "Академия \"Высшая инженерная школа\"", "АВИШ", listOf(
-                    Course(
-                        1, listOf(
-                            Specialty(
-                                "Инфокоммуникационные технологии и системы связи",
-                                "ШМС",
-                                listOf(
-                                    Group(185411, "ШМС-111")
-                                )
-                            ),
-                            Specialty(
-                                "Информатика и вычислительная техника",
-                                "ШАД",
-                                listOf(
-                                    Group(185407, "ШАД-111"),
-                                    Group(186322, "ШАД-112")
-                                )
-                            )
-                        )
-                    ),
-                    Course(
-                        1, listOf(
-                            Specialty(
-                                "Инфокоммуникационные технологии и системы связи",
-                                "ШМС",
-                                listOf(
-                                    Group(185411, "ШМС-111")
-                                )
-                            ),
-                            Specialty(
-                                "Информатика и вычислительная техника",
-                                "ШАД",
-                                listOf(
-                                    Group(185407, "ШАД-111"),
-                                    Group(186322, "ШАД-112")
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-        ),
         {}, {}
     )
 }
